@@ -7,8 +7,8 @@ import pandas as pd
 
 # ------- user input -------------
 site = "HBR_1"
-start_year = 2003
-end_year = 2023
+start_year = 2012
+end_year = 2022
 time_offset = 0  # Standard time offset from UTC - but the CSV file is already aligned
 npd = 24  # number of time steps per day (48 = half hourly)
 if site == 'HBR_1':
@@ -17,7 +17,7 @@ if site == 'HBR_1':
 elif site == 'HBR_2':
     mylon = 360-71.478825
     mylat = 43.9556695
-measurement_height = 5  # tower height (m)
+measurement_height = 2  # tower height (m)
 filename = os.path.join('./temp', f'downscaling_result_test.csv')
 calc_flds = False  # use T and RH to comput FLDS (use if data missing or sparse)
 leapdays = True  # input data has leap days (to be removed for ELM)

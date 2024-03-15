@@ -79,7 +79,7 @@ def bypass_format(filename, met_data, lat, lon, startyear, endyear, edge=0.1,
         all_hourly['RH'][0,:] = 100 * (1 - all_hourly['VPD'] / esat(all_hourly['TBOT'][0,:]-273.15))
       if not 'QBOT' in metvars:
         all_hourly.createVariable('QBOT','f',('gridcell','DTIME',))
-        mye = esat(all_hourly['TBOT'][0,:]-273.15) - all_hourly['VPD']
+        mye = esat(all_hourly['TBOT'][0,:]-273.15) - all_hourly['VPD'][0,:]
         all_hourly['QBOT'][0,:] = calc_q(mye/100., all_hourly['PSRF'][0,:]/100.)
         all_hourly['QBOT'].units = units['QBOT']
         all_hourly['QBOT'].long_name = long_names['QBOT']
@@ -94,8 +94,8 @@ def bypass_format(filename, met_data, lat, lon, startyear, endyear, edge=0.1,
 
         if not 'QBOT' in metvars:
           all_hourly.createVariable('QBOT','f',('gridcell','DTIME',))
-          mye = esat(all_hourly['TBOT'][0,:]-273.15) - all_hourly['VPD'] / 100.
-          all_hourly['QBOT'][0,:] = calc_q(mye, all_hourly['PSRF'][0,:]/100.)
+          mye = esat(all_hourly['TBOT'][0,:]-273.15) - all_hourly['VPD'][0,:]
+          all_hourly['QBOT'][0,:] = calc_q(mye, all_hourly['PSRF'][0,:])
           all_hourly['QBOT'].units = units['QBOT']
           all_hourly['QBOT'].long_name = long_names['QBOT']
           all_hourly['QBOT'].mode = 'time_dependent'
@@ -138,17 +138,9 @@ def bypass_format(filename, met_data, lat, lon, startyear, endyear, edge=0.1,
     all_hourly.close()
 
     # This recreates the file in short format. cpl_bypass cannot be in float format. 
-    # somehow, I need to use CDO instead of NCO to make things work
-    # Use module load PE-gnu; module load nco; module load cdo to enable these commands. 
-    
+    # Use module load PE-gnu; module load nco; module load cdo to enable these commands.
     os.system("ncpdq " + filename + " " + filename + "_pk")
     os.system("mv    " + filename + "_pk " + filename)
-
-    #os.system('ncpdq --rdr=DTIME,gridcell '+filename+' '+filename+'_re')
-    #os.system('cdo -b I16 copy '+filename+'_re '+filename+'_pk')
-    #os.system('ncpdq --rdr=gridcell,DTIME '+filename+'_pk '+filename+'_pk2')
-    #os.system('mv    '+filename+'_pk2 '+filename)
-    #os.system('rm '+filename+'_re '+filename+'_pk')
 
     output_data = Dataset(filename,'a')
     output_data.createDimension('scalar', 1)
