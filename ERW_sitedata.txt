@@ -1,0 +1,4 @@
+site_code,name,state,lon,lat,elev,startyear,endyear,alignyear
+UC_Davis,"UC_Davis",CA,-121.76588,38.533390,83,1980,2014,1851
+HBR_1,"Hubbard Brook Upland",NY,-71.728825,43.9556695,617.5,1980,2014,1851
+HBR_2,"Hubbard Brook Lowland",NY,-71.478825,43.9556695,617.5,1980,2014,1851
