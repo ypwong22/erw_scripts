@@ -6,7 +6,7 @@ import pandas as pd
 
 
 # ------- user input -------------
-site = "HBR_1"
+site = "HBR_2"
 start_year = 2012
 end_year = 2022
 time_offset = 0  # Standard time offset from UTC - but the CSV file is already aligned
@@ -18,7 +18,7 @@ elif site == 'HBR_2':
     mylon = 360-71.478825
     mylat = 43.9556695
 measurement_height = 2  # tower height (m)
-filename = os.path.join('./temp', f'downscaling_result_test.csv')
+filename = os.path.join('./temp', f'downscaling_result_final.csv')
 calc_flds = False  # use T and RH to comput FLDS (use if data missing or sparse)
 leapdays = True  # input data has leap days (to be removed for ELM)
 outdir = os.path.join('./temp', f'1x1pt_{site}')  # Desired directory for ELM met inputs
