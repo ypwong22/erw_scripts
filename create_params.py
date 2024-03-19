@@ -3,104 +3,160 @@ import os
 import numpy as np
 import shutil
 
-nminerals = 1
-ncations = 2
-nminsec = 1
 
+nminerals = 2
+ncations = 5
+nminsec = 1 # hard-code calcite for now
+
+
+########################################################################################
+# Dissolution reaction studies
+# --------------------------------------------------------------------------------------
+# Hubbard Brook study: Wollatonite (CaSiO3), 116.159 g/mol
+# 
+# CaSiO3 +2.0000 H+  =  + 1.0000 Ca++ + 1.0000 H2O + 1.0000 SiO2
+# --------------------------------------------------------------------------------------
+# UC Davis study: olivine (Mg2SiO4), 140.6931 g/mol
+# 
+# Mg2SiO4 +4.0000 H+  =  + 1.0000 SiO2 + 2.0000 H2O + 2.0000 Mg++
+########################################################################################
 
 shutil.copyfile("clm_params.erw_auto.nc", "clm_params.erw_temp.nc")
 
-
 hr = xr.open_dataset('clm_params.erw_temp.nc')
 
-# Wollastonite, 116.159 g/mol
-# https://pubs.usgs.gov/of/2004/1068/pdf/OFR_2004_1068.pdf, page 43 & eq 11
-# logk = -8.88, E = 54.7
-# CaSiO3 + 2H2O + 2CO2 -> Ca2+ + 2HCO3- + H4SiO4
-#
-# Olivine, 140.6931 g mol-1
-# 
-# Mg2SiO4 + 4*CO2 + 4*H2O -> 2*Mg2+ + 4HCO3- + H4SiO4
-hr['k_primary'] = xr.DataArray([10**(-8.88)],
-                               dims = ['minerals'], 
-                               attrs = {'long_name': 'primary mineral reaction constant at 298.15K', 'unit': 'mol m-2 s-1'}) #  (m-2 is the mineral surface area)
-hr['e_primary'] = xr.DataArray([54.7], 
-                               coords = {'minerals': range(1, 1+nminerals)}, 
-                               dims = ['minerals'],
-                               attrs = {'long_name': 'primary mineral reaction activation energy constant at 298.15K', 'unit': 'KJ mol-1'})
+# --------------------------------------------------------------------------------------
+# Rate constants in log10 unit
+# --------------------------------------------------------------------------------------
+# note: acid, neutral, and basic mechanisms are separate
+# fortran dimensions are swapped in reading
+hr['log_k_primary'] = xr.DataArray(np.full([3, nminerals], np.nan),
+    coords = {'minerals': range(1, 1+nminerals), 'mechanism': range(1,4)}, 
+    dims = ['mechanism','minerals'],
+    attrs = {'long_name': 'log10 of primary mineral reaction constant at 298.15K', 
+             'unit': 'log mol m-2 s-1'}) #  (m-2 is the mineral surface area)
+# wollasonite
+hr['log_k_primary'][0,0] = -5.37
+hr['log_k_primary'][1,0] = -8.88
+hr['log_k_primary'][2,0] = -9999
+# olivine (forsterite)
+hr['log_k_primary'][0,1] = -6.85
+hr['log_k_primary'][1,1] = -10.64
+hr['log_k_primary'][2,1] = -9999
 
-hr['primary_stoi_co2'] = xr.DataArray([1.], 
-                                      coords = {'minerals': range(1, 1+nminerals)}, 
-                                      dims = ['minerals'],
-                                      attrs = {'long_name': 'reaction stoichiometry coefficient in front of CO2', 'unit': ''})
-hr['primary_stoi_h2o'] = xr.DataArray([1.], 
-                                      coords = {'minerals': range(1, 1+nminerals)}, 
-                                      dims = ['minerals'],
-                                      attrs = {'long_name': 'reaction stoichiometry coefficient in front of water', 'unit': ''})
-hr['primary_stoi_cations'] = xr.DataArray([[1.,0.]], 
-                                          coords = {'minerals': range(1, 1+nminerals), 'cations': range(1, 1+ncations)}, 
-                                          dims = ['minerals', 'cations'], 
-                                          attrs = {'long_name': 'reaction stoichiometry coefficient in front of cations', 'unit': ''})
-hr['primary_stoi_bicarbonate'] = xr.DataArray([0.], 
-                                              coords = {'minerals': range(1, 1+nminerals)}, 
-                                              dims = ['minerals'],
-                                              attrs = {'long_name': 'reaction stoichiometry coefficient in front of bicarbonate', 'unit': ''})
-hr['primary_stoi_silicate'] = xr.DataArray([1.], 
-                                           coords = {'minerals': range(1, 1+nminerals)}, 
-                                           dims = ['minerals'],
-                                           attrs = {'long_name': 'reaction stoichiometry coefficient in front of silicate', 'unit': ''})
+# --------------------------------------------------------------------------------------
+# Activation energy
+# --------------------------------------------------------------------------------------
+hr['e_primary'] = xr.DataArray(np.full([3, nminerals], np.nan),
+    coords = {'minerals': range(1, 1+nminerals), 'mechanism': range(1,4)}, 
+    dims = ['mechanism','minerals'],
+    attrs = {'long_name': 'primary mineral reaction activation energy constant at 298.15K',
+             'unit': 'KJ mol-1'})
+# wollastonite
+hr['e_primary'][0,0] = 54.7
+hr['e_primary'][1,0] = 54.7
+hr['e_primary'][2,0] = 0.
+# olivine (forsterite)
+hr['e_primary'][0,1] = 67.2
+hr['e_primary'][1,1] = 79
+hr['e_primary'][2,1] = 0.
 
-hr['primary_weight'] = xr.DataArray([116.159], 
-                                    coords = {'minerals': range(1, 1+nminerals)}, 
-                                    dims = ['minerals'],
-                                    attrs = {'long_name': 'formula mass of the primary minerals', 'unit': 'g mol-1'})
-# Ca, Mg
-hr['cation_weight'] = xr.DataArray([40.078, 24.305],
-                                   coords = {'cations': range(1, 1+ncations)}, 
-                                   dims = ['cations'],
-                                   attrs = {'long_name': 'mass of the cations', 'unit': 'g mol-1'})
-hr['cation_valence'] = xr.DataArray([2., 2.], 
-                                    coords = {'cations': range(1, 1+ncations)}, 
-                                    dims = ['cations'],
-                                    attrs = {'long_name': 'valence of the cations', 'unit': 'g mol-1'})
+# --------------------------------------------------------------------------------------
+# Reaction order on H+ and OH-
+# --------------------------------------------------------------------------------------
+hr['n_primary'] = xr.DataArray(np.full([3,nminerals], np.nan),
+    coords = {'minerals': range(1, 1+nminerals), 'mechanism': range(1,4)}, 
+    dims = ['mechanism','minerals'],
+    attrs = {'long_name': 'reaction order of H+ and OH- with respect to acid and basic mechanisms', 
+            'unit': ''})
+# wollastonite
+hr['n_primary'][0,0] = 0.4
+hr['n_primary'][1,0] = 0.
+hr['n_primary'][2,0] = 0.
+# olivine (forsterite)
+hr['n_primary'][0,1] = 0.47
+hr['n_primary'][1,1] = 0.
+hr['n_primary'][2,1] = 0.
 
-#
-# Calcium carbonate, 100.0869 g/mol
-# llnl.dat
-# log_k = -7.0017, E = 30.5767
-# Ca2+ + 2*HCO3- -> CaCO3 + CO2 + H2O
-hr['secondary_weight'] = xr.DataArray([100.0869], 
-                                      coords = {'minsec': range(1, 1+nminsec)}, 
-                                      dims = ['minsec'],
-                                      attrs = {'long_name': 'formula mass of the secondary minerals', 'unit': 'g mol-1'})
+# --------------------------------------------------------------------------------------
+# Reaction equilibrium constants
+# --------------------------------------------------------------------------------------
+hr['log_keq_primary'] = xr.DataArray(np.full(nminerals, np.nan),
+    coords = {'minerals': range(1, 1+nminerals)}, 
+    dims = ['minerals'],
+    attrs = {'long_name': 'log10 of equilibrium constants for primary mineral dissolution', 
+             'unit': ''})
+# wollastonite
+hr['log_keq_primary'][0] = 13.7605
+# olivine (forsterite)
+hr['log_keq_primary'][1] = 27.8626
 
-hr['k_secondary'] = xr.DataArray([10**(-7.0017)], 
-                                 coords = {'minsec': range(1, 1+nminsec)}, 
-                                 dims = ['minsec'],
-                                 attrs = {'long_name': 'secondary mineral reaction constant at 298.15K', 'unit': 'mol m-2 s-1'}) #  (m-2 is the mineral surface area)
-hr['e_secondary'] = xr.DataArray([30.5767], 
-                                 coords = {'minsec': range(1, 1+nminsec)}, 
-                                 dims = ['minsec'],
-                                 attrs = {'long_name': 'secondary mineral reaction activation energy constant at 298.15K', 'unit': 'KJ mol-1'})
-hr['secondary_stoi_cations'] = xr.DataArray([[1, 0]], 
-                                            coords = {'minsec': range(1, 1+nminsec), 'cations': range(1, 1+ncations)}, 
-                                            dims = ['minsec', 'cations'])
-hr['secondary_stoi_bicarbonate'] = xr.DataArray([2.], 
-                                                coords = {'minsec': range(1, 1+nminsec)}, 
-                                                dims = ['minsec'],
-                                                attrs = {'long_name': 'reaction stoichiometry coefficient in front of bicarbonate', 'unit': ''})
-hr['secondary_stoi_minsec'] = xr.DataArray([1.], 
-                                           coords = {'minsec': range(1, 1+nminsec)}, 
-                                           dims = ['minsec'],
-                                           attrs = {'long_name': 'reaction stoichiometry coefficient in front of secondary mineral', 'unit': ''})
-hr['secondary_stoi_co2'] = xr.DataArray([1.], 
-                                        coords = {'minsec': range(1, 1+nminsec)}, 
-                                        dims = ['minsec'],
-                                        attrs = {'long_name': 'reaction stoichiometry coefficient in front of CO2', 'unit': ''})
-hr['secondary_stoi_h2o'] = xr.DataArray([1.], 
-                                        coords = {'minsec': range(1, 1+nminsec)}, 
-                                        dims = ['minsec'],
-                                        attrs = {'long_name': 'reaction stoichiometry coefficient in front of H2O', 'unit': ''})
+# --------------------------------------------------------------------------------------
+# Reaction stoichiometry following the paradigm of
+#  primary mineral + proton + (water) = cations + SiO2 + (water)
+# --------------------------------------------------------------------------------------
+hr['primary_stoi_proton'] = xr.DataArray(np.full(nminerals, np.nan), 
+    coords = {'minerals': range(1, 1+nminerals)}, 
+    dims = ['minerals'],
+    attrs = {'long_name': 'reaction stoichiometry coefficient in front of H+', 
+             'unit': ''})
+# wollastonite
+hr['primary_stoi_proton'][0] = 2
+# olivine (forsterite)
+hr['primary_stoi_proton'][1] = 4
+
+
+hr['primary_stoi_h2o_in'] = xr.DataArray(np.full(nminerals, np.nan), 
+    coords = {'minerals': range(1, 1+nminerals)}, 
+    dims = ['minerals'],
+    attrs = {'long_name': 'reaction stoichiometry coefficient in front of H2O as an reactant',
+             'unit': ''})
+# wollastonite
+hr['primary_stoi_h2o_in'][0] = 0
+# olivine (forsterite)
+hr['primary_stoi_h2o_in'][1] = 0
+
+# dimensions will be swapped when Fortran tries to read
+hr['primary_stoi_cations'] = xr.DataArray(np.full([ncations, nminerals], np.nan), 
+    coords = {'minerals': range(1, 1+nminerals), 'cations': range(1, 1+ncations)}, 
+    dims = ['cations','minerals'], 
+    attrs = {'long_name': 'reaction stoichiometry coefficient in front of cations', 
+             'unit': ''})
+# wollastonite
+hr['primary_stoi_cations'][:, 0] = 0
+hr['primary_stoi_cations'][0, 0] = 1
+# olivine (forsterite)
+hr['primary_stoi_cations'][:, 1] = 0
+hr['primary_stoi_cations'][1, 1] = 2
+
+
+hr['primary_stoi_silica'] = xr.DataArray(np.full(nminerals, np.nan), 
+    coords = {'minerals': range(1, 1+nminerals)}, 
+    dims = ['minerals'],
+    attrs = {'long_name': 'reaction stoichiometry coefficient in front of SiO2', 'unit': ''})
+# wollastonite
+hr['primary_stoi_silica'][0] = 1
+# olivine (forsterite)
+hr['primary_stoi_silica'][1] = 1
+
+
+hr['primary_stoi_h2o_out'] = xr.DataArray(np.full(nminerals, np.nan), 
+    coords = {'minerals': range(1, 1+nminerals)}, 
+    dims = ['minerals'],
+    attrs = {'long_name': 'reaction stoichiometry coefficient in front of H2O as a product', 
+             'unit': ''})
+# wollastonite
+hr['primary_stoi_h2o_out'][0] = 0
+# olivine (forsterite)
+hr['primary_stoi_h2o_out'][1] = 2
+
+# In the order of wollastonite, forsterite
+hr['primary_mass'] = xr.DataArray(np.full(nminerals, np.nan),
+    coords = {'minerals': range(1, 1+nminerals)}, 
+    dims = ['minerals'],
+    attrs = {'long_name': 'molar mass of the primary minerals', 'unit': 'g mol-1'})
+hr['primary_mass'][0] = 116.159
+hr['primary_mass'][1] = 140.6931
 
 encoding = {}
 for data_var in hr.data_vars:
@@ -109,7 +165,7 @@ for data_var in hr.data_vars:
     else:
         encoding[data_var] = {'_FillValue': None}
 
-hr.to_netcdf('../data/clm_params.erw_20240203.nc')
+hr.to_netcdf('clm_params.erw_20240203.nc')
 
 hr.close()
 
