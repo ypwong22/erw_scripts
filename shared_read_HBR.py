@@ -12,6 +12,9 @@ def read_lysimeter():
     data = data[['pH','Ca2+', 'Mg2+', 'Na+', 'K+', 'Alt']].sort_index() # 'Elevation',
     data[data < 0] = np.nan
 
+    # umol/L => mol/L
+    data.iloc[:, 1:] = data.iloc[:, 1:] * 1e-6
+
     # some sites have measurements at two elevations, average them
     duplicate_sites = data.index[data.index.to_frame().reset_index(drop = True).duplicated()]
 
@@ -57,6 +60,15 @@ def read_streamChem():
     data = data.groupby(data.index.get_level_values(0)).mean()
 
     return data
+
+
+def read_runoff():
+    """ read streamflow reported in mm/day """
+    streamflow = pd.read_csv(os.path.join(os.environ['PROJDIR'], 'DATA', 'Weathering',
+                                          'Hubbard Brook', 'knb-lter-hbr.2.14', 'HBEF_DailyStreamflow_1956-2023.csv'),
+                             index_col = 0, parse_dates = True)
+    streamflow = streamflow.loc[streamflow['WS'] == 1, 'Streamflow']
+    return streamflow
 
 
 def convert_streamChem(cation_conc):
