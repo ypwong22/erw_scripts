@@ -9,12 +9,17 @@ path_root = os.path.join(os.environ['PROJDIR'], 'E3SM', 'inputdata', 'lnd', 'clm
 #    'UC_Davis': {'CEC_TOT': 9, 'CEC_EFF': 9, 'CEC_ACID': 1},
 #    'HBR_1': {'CEC_TOT': 7, 'CEC_EFF': 7, 'CEC_ACID': 1}
 #}
+
+
+################################################################################################
+# Interpolated NCSS
+
 data_cec = pd.read_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 'results',
                                     'interp_NCSS_results.csv'), 
                        index_col = [0,1])
 nlevsoi = 10
 
-for site in ['UC_Davis', 'HBR_1', 'HBR_2']:
+for site in ['UC_Davis']: # ['HBR_1', 'HBR_2']:
     path_surffdata = os.path.join(path_root, site, 'surfdata.nc')
     if not os.path.exists(f'{path_surffdata}_orig'):
         os.system(f'cp {path_surffdata} {path_surffdata}_orig')
@@ -76,3 +81,88 @@ for site in ['UC_Davis', 'HBR_1', 'HBR_2']:
 
     hr.to_netcdf(path_surffdata)
     hr.close()
+
+################################################################################################
+# Hubbard Brook observation
+site = 'HBR_1'
+
+
+elm_input = pd.read_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 
+                                     'results', 'HBR_elm_input.csv'), index_col = 0)
+logkm = pd.read_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 
+                                     'results', 'HBR_logkm.csv'), index_col = 0)
+
+
+path_surffdata = os.path.join(path_root, site, 'surfdata.nc')
+if not os.path.exists(f'{path_surffdata}_orig'):
+    os.system(f'cp {path_surffdata} {path_surffdata}_orig')
+hr = xr.open_dataset(f'{path_surffdata}_orig')
+
+dims = ['nlevsoi', 'lsmlat', 'lsmlon']
+coords = {'nlevsoi': hr['nlevsoi'], 'lsmlat': hr['lsmlat'], 'lsmlon': hr['lsmlon']}
+
+
+hr['SOIL_PH'] = xr.DataArray(
+    np.append(
+        elm_input['pH'].values, [np.nan, np.nan, np.nan, np.nan]
+    ).reshape(-1, 1, 1),
+    dims = dims,
+    coords = coords,
+    attrs = {'long_name': 'soil pH', 'units': ''}
+)
+
+hr['ORGANIC'] = xr.DataArray(
+    np.append(
+        elm_input['OM'].values, [np.nan, np.nan, np.nan, np.nan]
+    ).reshape(-1, 1, 1),
+    dims = dims,
+    coords = coords,
+    attrs = {'long_name': 'organic matter density at soil levels', 
+             'units': 'kg/m3 (assumed carbon content 0.58 gC per gOM)'}
+)
+
+hr['CEC_TOT'] = xr.DataArray(
+    np.append(
+        elm_input['CEC_TOT'].values, [np.nan, np.nan, np.nan, np.nan]
+    ).reshape(-1, 1, 1),
+    dims = dims,
+    coords = coords,
+    attrs = {'long_name': 'acid exchange capacity', 
+             'units': 'meq 100g-1 dry soil'}
+)
+
+hr['CEC_ACID'] = xr.DataArray(
+    np.append(
+        elm_input['CEC_ACID'].values, [np.nan, np.nan, np.nan, np.nan]
+    ).reshape(-1, 1, 1),
+    dims = dims,
+    coords = coords,
+    attrs = {'long_name': 'total cation exchange capacity', 
+             'units': 'meq 100g-1 dry soil'}
+)
+
+for a,col in enumerate(['CEC_Ca', 'CEC_Mg', 'CEC_Na', 'CEC_K', 'CEC_Al']):
+    hr[f'CEC_EFF_{a+1}'] = xr.DataArray(
+        np.append(
+            elm_input[col].values, [np.nan, np.nan, np.nan, np.nan]
+        ).reshape(-1, 1, 1),
+        dims = dims, 
+        coords = coords,
+        attrs = {'long_name': 'individual cation exchange capacity',
+                 'units': 'meq 100g-1 dry soil'}
+    )
+
+
+for a,col in enumerate(['Ca', 'Mg', 'Na', 'K', 'Al']):
+    hr[f'LOG_KM_{a+1}'] = xr.DataArray(
+        np.append(
+            logkm[col].values, [np.nan, np.nan, np.nan, np.nan]
+        ).reshape(-1, 1, 1),
+        dims = dims, 
+        coords = coords,
+        attrs = {'long_name': 'individual Gaines-Thomas cation exchange coefficients',
+                 'units': ''}
+    )
+
+hr.to_netcdf(path_surffdata)
+hr.close()
