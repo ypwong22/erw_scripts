@@ -79,6 +79,12 @@ for site in ['UC_Davis']: # ['HBR_1', 'HBR_2']:
         hr[varname][7] = data_cec.loc[(site, 'layer_4'), colname]
         hr[varname][8:10] = data_cec.loc[(site, 'layer_5'), colname]
 
+    # Because H+ exchange capacity is not measured at the same pH as CEC_TOT and
+    # includes Al3+, recalculate CEC_TOT as the sum
+    hr['CEC_ACID'] = hr['CEC_ACID'] - hr['CEC_EFF_5'].values
+    hr['CEC_TOT'] = hr['CEC_ACID'] + hr['CEC_EFF_1'].values + hr['CEC_EFF_2'].values + \
+        hr['CEC_EFF_3'].values + hr['CEC_EFF_4'].values + hr['CEC_EFF_5'].values
+
     hr.to_netcdf(path_surffdata)
     hr.close()
 
@@ -102,6 +108,20 @@ dims = ['nlevsoi', 'lsmlat', 'lsmlon']
 coords = {'nlevsoi': hr['nlevsoi'], 'lsmlat': hr['lsmlat'], 'lsmlon': hr['lsmlon']}
 
 
+# Organic matter content needs all layers
+# layer 7 - use Bs, layer 8 - use (Bh+Bsm)/2, layer 9 & 10 - use C
+hr['ORGANIC'] = xr.DataArray(
+    np.append(
+        elm_input['OM'].values, [8.307600, 8.2178765, 1.502483, 1.502483]
+    ).reshape(-1, 1, 1),
+    dims = dims,
+    coords = coords,
+    attrs = {'long_name': 'organic matter density at soil levels', 
+             'units': 'kg/m3 (assumed carbon content 0.58 gC per gOM)'}
+)
+
+
+# Below are for enhanced weathering; only need top layer
 hr['SOIL_PH'] = xr.DataArray(
     np.append(
         elm_input['pH'].values, [np.nan, np.nan, np.nan, np.nan]
@@ -109,16 +129,6 @@ hr['SOIL_PH'] = xr.DataArray(
     dims = dims,
     coords = coords,
     attrs = {'long_name': 'soil pH', 'units': ''}
-)
-
-hr['ORGANIC'] = xr.DataArray(
-    np.append(
-        elm_input['OM'].values, [np.nan, np.nan, np.nan, np.nan]
-    ).reshape(-1, 1, 1),
-    dims = dims,
-    coords = coords,
-    attrs = {'long_name': 'organic matter density at soil levels', 
-             'units': 'kg/m3 (assumed carbon content 0.58 gC per gOM)'}
 )
 
 hr['CEC_TOT'] = xr.DataArray(
