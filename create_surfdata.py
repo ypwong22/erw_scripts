@@ -35,34 +35,49 @@ for site in ['UC_Davis']: # ['HBR_1', 'HBR_2']:
             coords = coords,
             attrs = {'long_name': 'soil pH', 'units': ''}
         )
-    else:
+    elif 'HBR' in site:
         hr['SOIL_PH'] = xr.DataArray(
-            np.full([nlevsoi] + [1]*(len(dims)-1), 3.5),
+            np.full([nlevsoi] + [1]*(len(dims)-1), 4.33),
             dims = dims, 
             coords = coords,
             attrs = {'long_name': 'soil pH', 'units': ''}
         )
 
-    for varname, longname, colname in \
-        zip(['CEC_TOT', 'CEC_ACID'],
-            ['total cation exchange capacity', 'acid exchange capacity'],
-            ['cec_nh4_ph_7', 'acidity_bacl2_tea_ph_8_2']):
+    hr['CEC_TOT'] = xr.DataArray(
+        np.full([nlevsoi] + [1]*(len(dims)-1), np.nan),
+        dims = dims, 
+        coords = coords,
+        attrs = {'long_name': 'total cation exchange capacity', 'units': 'meq 100g-1 dry soil'}
+    )
+    hr['CEC_TOT'][:3] = data_cec.loc[(site, 'layer_0'), 'CEC_tot']
+    hr['CEC_TOT'][3:5] = data_cec.loc[(site, 'layer_1'), 'CEC_tot']
+    hr['CEC_TOT'][5] = data_cec.loc[(site, 'layer_2'), 'CEC_tot']
+    hr['CEC_TOT'][6] = data_cec.loc[(site, 'layer_3'), 'CEC_tot']
+    hr['CEC_TOT'][7] = data_cec.loc[(site, 'layer_4'), 'CEC_tot']
+    hr['CEC_TOT'][8:10] = data_cec.loc[(site, 'layer_5'), 'CEC_tot']
 
-        hr[varname] = xr.DataArray(
-            np.full([nlevsoi] + [1]*(len(dims)-1), np.nan),
-            dims = dims, 
-            coords = coords,
-            attrs = {'long_name': longname, 'units': 'meq 100g-1 dry soil'}
-        )
-        hr[varname][:3] = data_cec.loc[(site, 'layer_0'), colname]
-        hr[varname][3:5] = data_cec.loc[(site, 'layer_1'), colname]
-        hr[varname][5] = data_cec.loc[(site, 'layer_2'), colname]
-        hr[varname][6] = data_cec.loc[(site, 'layer_3'), colname]
-        hr[varname][7] = data_cec.loc[(site, 'layer_4'), colname]
-        hr[varname][8:10] = data_cec.loc[(site, 'layer_5'), colname]
+    hr['CEC_ACID'] = xr.DataArray(
+        np.full([nlevsoi] + [1]*(len(dims)-1), np.nan),
+        dims = dims, 
+        coords = coords,
+        attrs = {'long_name': 'acid cation exchange capacity', 'units': 'meq 100g-1 dry soil'}
+    )
+    temp = ['beta_Ca','beta_Mg','beta_Na','beta_K','beta_Al']
+    hr['CEC_ACID'][:3] = (1 - data_cec.loc[(site, 'layer_0'), temp].sum()) * \
+        data_cec.loc[(site, 'layer_0'), 'CEC_tot']
+    hr['CEC_ACID'][3:5] = (1 - data_cec.loc[(site, 'layer_1'), temp].sum()) * \
+        data_cec.loc[(site, 'layer_1'), 'CEC_tot']
+    hr['CEC_ACID'][5] = (1 - data_cec.loc[(site, 'layer_2'), temp].sum()) * \
+        data_cec.loc[(site, 'layer_2'), 'CEC_tot']
+    hr['CEC_ACID'][6] = (1 - data_cec.loc[(site, 'layer_3'), temp].sum()) * \
+        data_cec.loc[(site, 'layer_3'), 'CEC_tot']
+    hr['CEC_ACID'][7] = (1 - data_cec.loc[(site, 'layer_4'), temp].sum()) * \
+        data_cec.loc[(site, 'layer_4'), 'CEC_tot']
+    hr['CEC_ACID'][8:10] = (1 - data_cec.loc[(site, 'layer_5'), temp].sum()) * \
+        data_cec.loc[(site, 'layer_5'), 'CEC_tot']
 
     for a, colname in enumerate(
-        ['ca_nh4_ph_7', 'mg_nh4_ph_7', 'na_nh4_ph_7', 'k_nh4_ph_7', 'aluminum_kcl_extractable']
+        ['beta_Ca','beta_Mg','beta_Na','beta_K','beta_Al']
     ):
         varname = f'CEC_EFF_{a+1}'
         hr[varname] = xr.DataArray(
@@ -72,18 +87,18 @@ for site in ['UC_Davis']: # ['HBR_1', 'HBR_2']:
             attrs = {'long_name': 'individual cation exchange capacity',
                      'units': 'meq 100g-1 dry soil'}
         )
-        hr[varname][:3] = data_cec.loc[(site, 'layer_0'), colname]
-        hr[varname][3:5] = data_cec.loc[(site, 'layer_1'), colname]
-        hr[varname][5] = data_cec.loc[(site, 'layer_2'), colname]
-        hr[varname][6] = data_cec.loc[(site, 'layer_3'), colname]
-        hr[varname][7] = data_cec.loc[(site, 'layer_4'), colname]
-        hr[varname][8:10] = data_cec.loc[(site, 'layer_5'), colname]
-
-    # Because H+ exchange capacity is not measured at the same pH as CEC_TOT and
-    # includes Al3+, recalculate CEC_TOT as the sum
-    hr['CEC_ACID'] = hr['CEC_ACID'] - hr['CEC_EFF_5'].values
-    hr['CEC_TOT'] = hr['CEC_ACID'] + hr['CEC_EFF_1'].values + hr['CEC_EFF_2'].values + \
-        hr['CEC_EFF_3'].values + hr['CEC_EFF_4'].values + hr['CEC_EFF_5'].values
+        hr[varname][:3] = data_cec.loc[(site, 'layer_0'), colname] * \
+            data_cec.loc[(site, 'layer_0'), 'CEC_tot']
+        hr[varname][3:5] = data_cec.loc[(site, 'layer_1'), colname] * \
+            data_cec.loc[(site, 'layer_1'), 'CEC_tot']
+        hr[varname][5] = data_cec.loc[(site, 'layer_2'), colname] * \
+            data_cec.loc[(site, 'layer_2'), 'CEC_tot']
+        hr[varname][6] = data_cec.loc[(site, 'layer_3'), colname] * \
+            data_cec.loc[(site, 'layer_3'), 'CEC_tot']
+        hr[varname][7] = data_cec.loc[(site, 'layer_4'), colname] * \
+            data_cec.loc[(site, 'layer_4'), 'CEC_tot']
+        hr[varname][8:10] = data_cec.loc[(site, 'layer_5'), colname] * \
+            data_cec.loc[(site, 'layer_5'), 'CEC_tot']
 
     hr.to_netcdf(path_surffdata)
     hr.close()
