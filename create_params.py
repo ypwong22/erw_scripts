@@ -3,10 +3,6 @@ import os
 import numpy as np
 import shutil
 
-# In the order of CaSiO3, Mg2SiO4, NaAlSi3O8, CaAl2Si2O8, Ca2FeAl2(SiO4)3(OH)
-nminerals = 5
-ncations = 5 # Ca Mg Na K Al
-
 ########################################################################################
 # Dissolution reaction studies
 # --------------------------------------------------------------------------------------
@@ -34,231 +30,98 @@ ncations = 5 # Ca Mg Na K Al
 #       Mg2SiO4 +4.0000 H+  =  + 1.0000 SiO2 + 2.0000 H2O + 2.0000 Mg++
 #    6.83% serpentine, not considered
 ########################################################################################
+nminerals = 10
+nminsec = 2
+ncations = 5
+nks = 3
+string_length = 40
 
-shutil.copyfile("clm_params.erw_auto.nc", "clm_params.erw_temp.nc")
+# Define the data
+minerals_name = ['Wollastonite_CaSiO3', 'Forsterite_Mg2SiO4', 'Albite_NaAlSi3O8', 
+                 'Anorthite_CaAl2Si2O8', 'Epidote_Ca2FeAl2(SiO4)3(OH)', 'Calcite_CaCO3',
+                 'Labradorite_Ca0.6Na0.4Al1.6Si2.4O8', 'Augite_Ca0.9Mg0.9Na0.1Al0.4Fe0.2Si1.9O6',
+                 'Kfeldspar_KAlSi3O8', 'Enstatite_MgSiO3']
+minsecs_name = ['Calcite_CaCO3', 'Kaolinite_Al2Si2O5(OH)4']
+cations_name = ['Ca2+', 'Mg2+', 'Na+', 'K+', 'Al3+']
 
-hr = xr.open_dataset('clm_params.erw_temp.nc')
-
-# --------------------------------------------------------------------------------------
-# Rate constants in log10 unit
-# --------------------------------------------------------------------------------------
-# note: acid, neutral, and basic mechanisms are separate
-# fortran dimensions are swapped in reading
-hr['log_k_primary'] = xr.DataArray(np.full([3, nminerals], np.nan),
-    coords = {'minerals': range(1, 1+nminerals), 'mechanism': range(1,4)}, 
-    dims = ['mechanism','minerals'],
-    attrs = {'long_name': 'log10 of primary mineral reaction constant at 298.15K', 
-             'unit': 'log mol m-2 s-1'}) #  (m-2 is the mineral surface area)
-# CaSiO3 wollastonite
-hr['log_k_primary'][0,0] = -5.37
-hr['log_k_primary'][1,0] = -8.88
-hr['log_k_primary'][2,0] = -9999
-# Mg2SiO4 forsterite
-hr['log_k_primary'][0,1] = -6.85
-hr['log_k_primary'][1,1] = -10.64
-hr['log_k_primary'][2,1] = -9999
-# NaAlSi3O8 albite (Palandri 2004 Table 13)
-hr['log_k_primary'][0,2] = -10.16
-hr['log_k_primary'][1,2] = -12.56
-hr['log_k_primary'][2,2] = -15.60
-# CaAl2Si2O8 anorthite (Palandri 2004 Table 13)
-hr['log_k_primary'][0,3] = -3.50
-hr['log_k_primary'][1,3] = -9.12
-hr['log_k_primary'][2,3] = -9999
-# Ca2FeAl2(SiO4)3(OH) epidote (Palandri 2004 Table 23)
-hr['log_k_primary'][0,4] = -10.60
-hr['log_k_primary'][1,4] = -11.99
-hr['log_k_primary'][2,4] = -17.33
+# Fill arrays with missing values where data is not provided
+fill = -9999
 
 # --------------------------------------------------------------------------------------
-# Activation energy
-# --------------------------------------------------------------------------------------
-hr['e_primary'] = xr.DataArray(np.full([3, nminerals], np.nan),
-    coords = {'minerals': range(1, 1+nminerals), 'mechanism': range(1,4)}, 
-    dims = ['mechanism','minerals'],
-    attrs = {'long_name': 'primary mineral reaction activation energy constant at 298.15K',
-             'unit': 'KJ mol-1'})
-# CaSiO3 wollastonite
-hr['e_primary'][0,0] = 54.7
-hr['e_primary'][1,0] = 54.7
-hr['e_primary'][2,0] = 0.
-# Mg2SiO4 forsterite
-hr['e_primary'][0,1] = 67.2
-hr['e_primary'][1,1] = 79
-hr['e_primary'][2,1] = 0.
-# NaAlSi3O8 albite (Palandri 2004 Table 13)
-hr['e_primary'][0,2] = 65.
-hr['e_primary'][1,2] = 69.8
-hr['e_primary'][2,2] = 71.
-# CaAl2Si2O8 anorthite (Palandri 2004 Table 13)
-hr['e_primary'][0,3] = 16.6
-hr['e_primary'][1,3] = 17.8
-hr['e_primary'][2,3] = 0
-# Ca2FeAl2(SiO4)3(OH) epidote (Palandri 2004 Table 23)
-hr['e_primary'][0,4] = 71.1
-hr['e_primary'][1,4] = 70.7
-hr['e_primary'][2,4] = 79.1
-
-
-# --------------------------------------------------------------------------------------
-# Reaction order on H+ and OH-
-# --------------------------------------------------------------------------------------
-hr['n_primary'] = xr.DataArray(np.full([3,nminerals], np.nan),
-    coords = {'minerals': range(1, 1+nminerals), 'mechanism': range(1,4)}, 
-    dims = ['mechanism','minerals'],
-    attrs = {'long_name': 'reaction order of H+ and OH- with respect to acid and basic mechanisms', 
-            'unit': ''})
-# CaSiO3 wollastonite
-hr['n_primary'][0,0] = 0.4
-hr['n_primary'][1,0] = 0.
-hr['n_primary'][2,0] = 0.
-# Mg2SiO4 forsterite
-hr['n_primary'][0,1] = 0.47
-hr['n_primary'][1,1] = 0.
-hr['n_primary'][2,1] = 0.
-# NaAlSi3O8 albite (Palandri 2004 Table 13)
-hr['n_primary'][0,2] = 0.457
-hr['n_primary'][1,2] = 0.
-hr['n_primary'][2,2] = -0.572
-# CaAl2Si2O8 anorthite (Palandri 2004 Table 13)
-hr['n_primary'][0,3] = 1.411
-hr['n_primary'][1,3] = 0.
-hr['n_primary'][2,3] = 0.
-# Ca2FeAl2(SiO4)3(OH) epidote (Palandri 2004 Table 23)
-hr['n_primary'][0,4] = 0.338
-hr['n_primary'][1,4] = 0.
-hr['n_primary'][2,4] = -0.556
-
-# --------------------------------------------------------------------------------------
-# Reaction equilibrium constants
-# --------------------------------------------------------------------------------------
-hr['log_keq_primary'] = xr.DataArray(np.full(nminerals, np.nan),
-    coords = {'minerals': range(1, 1+nminerals)}, 
-    dims = ['minerals'],
-    attrs = {'long_name': 'log10 of equilibrium constants for primary mineral dissolution', 
-             'unit': ''})
-# CaSiO3 wollastonite (llnl.dat)
-hr['log_keq_primary'][0] = 13.7605
-# Mg2SiO4 forsterite (llnl.dat)
-hr['log_keq_primary'][1] = 27.8626
-# NaAlSi3O8 albite
-hr['log_keq_primary'][2] = 2.7645
-# CaAl2Si2O8 anorthite
-hr['log_keq_primary'][3] = 26.5780
-# Ca2FeAl2(SiO4)3(OH) epidote
-hr['log_keq_primary'][4] = 32.9296
-
-
-# --------------------------------------------------------------------------------------
+# Create the dataset
+#
+# log_keq_primary from llnl.dat and phreeqc.dat
+#
+# k, e, n from Palandri et al. 2004
+#
 # Reaction stoichiometry following the paradigm of
-#  primary mineral + proton + (water) = cations + SiO2 + (water)
+#  primary mineral + proton + (water) = cations + SiO2 + (water) + (HCO3-)
+#  sign convention for (water): positive if on the right side, negative if on the left
 # --------------------------------------------------------------------------------------
-hr['primary_stoi_proton'] = xr.DataArray(np.full(nminerals, np.nan), 
-    coords = {'minerals': range(1, 1+nminerals)}, 
-    dims = ['minerals'],
-    attrs = {'long_name': 'reaction stoichiometry coefficient in front of H+', 
-             'unit': ''})
-# CaSiO3 wollastonite
-hr['primary_stoi_proton'][0] = 2
-# Mg2SiO4 forsterite
-hr['primary_stoi_proton'][1] = 4
-# NaAlSi3O8 albite
-hr['primary_stoi_proton'][2] = 4
-# CaAl2Si2O8 anorthite
-hr['primary_stoi_proton'][3] = 8
-# Ca2FeAl2(SiO4)3(OH) epidote
-hr['primary_stoi_proton'][4] = 4
+ds = xr.Dataset({
+    'minerals_name': ('nminerals', np.array(minerals_name, dtype=f'S{string_length}')),
+    'minsecs_name': ('nminsecs', np.array(minsecs_name, dtype=f'S{string_length}')),
+    'cations_name': ('ncations', np.array(cations_name, dtype=f'S{string_length}')),
+    'log_keq_primary': ('nminerals', np.array([13.7605, 27.8626, 2.7645, 26.578, 32.9296, 
+                                               1.8487, fill, fill, -0.2753, 11.3269])),
+    'log_k_primary': (('nks', 'nminerals'), np.array([
+        [ -5.37,  -6.85, -10.16,  -3.5,  -10.6,   -0.3,  -7.87,  -6.82, -10.06,  -9.02], # acid
+        [ -8.88, -10.64, -12.56, -9.12, -11.99,  -5.81, -10.91, -11.97, -12.41, -12.72], # neutral
+        [  fill,   fill,  -15.6,  fill, -17.33,   fill, -15.57,   fill,  -21.2,   fill] # base
+    ])),
+    'e_primary': (('nks', 'nminerals'), np.array([
+        [  54.7,   67.2,     65, 16.6,    71.1,   14.4,   42.1,     78,   51.7,    80], # acid
+        [  54.7,     79,   69.8, 17.8,    70.7,   23.5,   45.2,     78,     38,    80], # neutral
+        [     0,      0,     71,    0,    79.1,      0,     71,      0,   94.1,     0] # base
+    ])),
+    'n_primary': (('nks', 'nminerals'), np.array([
+        [   0.4,   0.47,  0.457,1.411,   0.338,      1,   0.63,    0.7,    0.5,   0.6], # acid
+        [     0,      0,      0,    0,       0,      0,      0,      0,      0,     0], # neutral
+        [     0,      0, -0.572,    0,  -0.556,      1,  -0.57,      0,  -0.82,     0] # base
+    ])),
+    'primary_stoi_proton': ('nminerals', np.array([ # one can see this from valence
+        2, 4, 4, 8, 4, 1, 6.4, 4.9, 4, 2
+    ])),
+    'primary_stoi_cations': (('nminerals', 'ncations'), np.array([
+        [1,0,0,0,0], [0,2,0,0,0], [0,0,1,0,1], [1,0,0,0,2], [2,0,0,0,0], 
+        [1,0,0,0,0], [0.6,0,0.4,0,1.6], [0.9,0.9,0.1,0,0.4],[0,0,1,0,1],[0,1,0,0,0]
+    ])), # one can see this from the chemical formula; except epidote
+    'primary_stoi_h2o': ('nminerals', np.array([1, 2, 2, 4, 2, 0, 3.2, 2, 2, 1])),
+    'primary_stoi_sio2': ('nminerals', np.array([1, 1, 3, 2, 3, 0, 2.4, 1.9, 3, 1])),
+    'primary_stoi_hco3': ('nminerals', np.array([0, 0, 0, 0, 0, 1, 0, 0, 0, 0])),
+    'primary_mass': ('nminerals', np.array([116.159, 140.6931,  262.22, 278.21, 483.22, 
+                                            100.0872, 271.937, 236.371, 278.35, 100.4])),
+    'cations_mass': ('ncations', np.array([40.078, 24.305, 22.99, 39.0983, 26.98])),
+    'cations_valence': ('ncations', np.array([2, 2, 1, 1, 3])),
+    'minsecs_mass': ('nminsecs', np.array([100.0872, 258.1604])),
+    'log_keq_minsecs': ('nminsecs', np.array([-8.48, -6.8101])),
+    'alpha_minsecs': ('nminsecs', np.array([9e-10, 6.4e-14]))
+})
 
+# Set variable attributes
+ds['log_k_primary'].attrs = {'long_name': 'log10 of primary mineral reaction constant at 298.15K', 
+                             'unit': 'log mol m-2 s-1'} # (m-2 is the mineral surface area)
+ds['e_primary'].attrs = {'long_name': 'primary mineral reaction activation energy constant at 298.15K', 'unit': 'KJ mol-1'}
+ds['n_primary'].attrs = {'long_name': 'reaction order of H+ and OH- with respect to acid and basic mechanisms', 'unit': ''}
+ds['log_keq_primary'].attrs = {'long_name': 'log10 of equilibrium constants for primary mineral dissolution', 'unit': ''}
+ds['primary_stoi_proton'].attrs = {'long_name': 'reaction stoichiometry coefficient in front of H+', 'unit': ''}
+ds['primary_stoi_h2o'].attrs = {'long_name': 'reaction stoichiometry coefficient in front of H2O (positive=right, negative=left)', 'unit': ''}
+ds['primary_stoi_cations'].attrs = {'long_name': 'reaction stoichiometry coefficient in front of cations', 'unit': ''}
+ds['primary_stoi_sio2'].attrs = {'long_name': 'reaction stoichiometry coefficient in front of SiO2', 'unit': ''}
+ds['primary_mass'].attrs = {'long_name': 'molar mass of the primary minerals', 'unit': 'g mol-1'}
+ds['cations_mass'].attrs = {'long_name': 'molar mass of the cations', 'unit': 'g mol-1'}
+ds['cations_valence'].attrs = {'long_name': 'valence of the cations', 'unit': ''}
+ds['minsecs_mass'].attrs = {'long_name': 'molar mass of the secondary minerals', 'unit': 'g mol-1'}
+ds['log_keq_minsecs'].attrs = {'long_name': 'log10 of equilibrium constants for secondary mineral dissolution', 'unit': ''}
+ds['log_keq_minsecs'].attrs = {'long_name': 'precipitation rate parameter of the secondary minerals', 'unit': ''}
 
-hr['primary_stoi_h2o_in'] = xr.DataArray(np.full(nminerals, np.nan), 
-    coords = {'minerals': range(1, 1+nminerals)}, 
-    dims = ['minerals'],
-    attrs = {'long_name': 'reaction stoichiometry coefficient in front of H2O as an reactant',
-             'unit': ''})
-# CaSiO3 wollastonite
-hr['primary_stoi_h2o_in'][0] = 0
-# Mg2SiO4 forsterite
-hr['primary_stoi_h2o_in'][1] = 0
-# NaAlSi3O8 albite
-hr['primary_stoi_h2o_in'][2] = 0
-# CaAl2Si2O8 anorthite
-hr['primary_stoi_h2o_in'][3] = 0
-# Ca2FeAl2(SiO4)3(OH) epidote
-hr['primary_stoi_h2o_in'][4] = 0
-
-# dimensions will be swapped when Fortran tries to read
-hr['primary_stoi_cations'] = xr.DataArray(np.full([ncations, nminerals], np.nan), 
-    coords = {'minerals': range(1, 1+nminerals), 'cations': range(1, 1+ncations)}, 
-    dims = ['cations','minerals'], 
-    attrs = {'long_name': 'reaction stoichiometry coefficient in front of cations', 
-             'unit': ''})
-# CaSiO3 wollastonite
-hr['primary_stoi_cations'][:, 0] = 0
-hr['primary_stoi_cations'][0, 0] = 1
-# Mg2SiO4 forsterite
-hr['primary_stoi_cations'][:, 1] = 0
-hr['primary_stoi_cations'][1, 1] = 2
-# NaAlSi3O8 albite
-hr['primary_stoi_cations'][:, 2] = 0
-hr['primary_stoi_cations'][2, 2] = 1
-hr['primary_stoi_cations'][4, 2] = 1
-# CaAl2Si2O8 anorthite
-hr['primary_stoi_cations'][:, 3] = 0
-hr['primary_stoi_cations'][0, 3] = 1
-hr['primary_stoi_cations'][4, 3] = 2
-# Ca2FeAl2(SiO4)3(OH) epidote
-hr['primary_stoi_cations'][:, 4] = 0
-hr['primary_stoi_cations'][0, 4] = 2
-
-
-hr['primary_stoi_silica'] = xr.DataArray(np.full(nminerals, np.nan), 
-    coords = {'minerals': range(1, 1+nminerals)}, 
-    dims = ['minerals'],
-    attrs = {'long_name': 'reaction stoichiometry coefficient in front of SiO2', 'unit': ''})
-# CaSiO3 wollastonite
-hr['primary_stoi_silica'][0] = 1
-# Mg2SiO4 forsterite
-hr['primary_stoi_silica'][1] = 1
-# NaAlSi3O8 albite
-hr['primary_stoi_silica'][2] = 3
-# CaAl2Si2O8 anorthite
-hr['primary_stoi_silica'][3] = 2
-# Ca2FeAl2(SiO4)3(OH) epidote
-hr['primary_stoi_silica'][4] = 3
-
-
-
-hr['primary_stoi_h2o_out'] = xr.DataArray(np.full(nminerals, np.nan), 
-    coords = {'minerals': range(1, 1+nminerals)}, 
-    dims = ['minerals'],
-    attrs = {'long_name': 'reaction stoichiometry coefficient in front of H2O as a product', 
-             'unit': ''})
-# CaSiO3 wollastonite
-hr['primary_stoi_h2o_out'][0] = 0
-# Mg2SiO4 forsterite
-hr['primary_stoi_h2o_out'][1] = 2
-# NaAlSi3O8 albite
-hr['primary_stoi_h2o_out'][2] = 2
-# CaAl2Si2O8 anorthite
-hr['primary_stoi_h2o_out'][3] = 4
-# Ca2FeAl2(SiO4)3(OH) epidote
-hr['primary_stoi_h2o_out'][4] = 2
-
-
-# remaining solids will be calculated as being subtracted; no stoichiometry
-
-
-# In the order of CaSiO3, Mg2SiO4, NaAlSi3O8, CaAl2Si2O8, Ca2FeAl2(SiO4)3(OH)
-hr['primary_mass'] = xr.DataArray(np.full(nminerals, np.nan),
-    coords = {'minerals': range(1, 1+nminerals)}, 
-    dims = ['minerals'],
-    attrs = {'long_name': 'molar mass of the primary minerals', 'unit': 'g mol-1'})
-hr['primary_mass'][0] = 116.159
-hr['primary_mass'][1] = 140.6931
-hr['primary_mass'][2] = 262.22
-hr['primary_mass'][3] = 278.21
-hr['primary_mass'][4] = 483.22
-
+# Set global attributes
+ds.attrs['title'] = 'soil/rock powder weathering constants'
+ds.attrs['Created_by'] = 'f9y,edited by ywo'
+ds.attrs['Conventions'] = 'CF-1.0'
+ds.attrs['Created_on'] = 'Wed Jun 05 13:12:46 EDT 2024'
+ds.attrs['NCO'] = '4.6.6'
+ds.attrs['history'] = 'Wed Jun 05 12:07:37 2024: created by F.-M. Yuan, ESD/CCSI-ORNL'
 
 #encoding = {}
 #for data_var in hr.data_vars:
@@ -268,14 +131,17 @@ hr['primary_mass'][4] = 483.22
 #        encoding[data_var] = {'_FillValue': 1e20}
 
 encoding = {}
-for data_var in hr.data_vars:
-    if '_FillValue' in hr[data_var].encoding.keys():
+for data_var in ds.data_vars:
+    if '_FillValue' in ds[data_var].encoding.keys():
+        continue
+    elif ds[data_var].dtype.str.startswith('|S'):
         continue
     else:
-        encoding[data_var] = {'_FillValue': None}
+        encoding[data_var] = {'_FillValue': fill}
 
-hr.to_netcdf('clm_params.erw_20240404.nc', encoding = encoding, format='NETCDF3_CLASSIC')
+# Save the dataset to a NetCDF file
+output_filename = os.path.join(os.environ['PROJDIR'], 'E3SM', 'inputdata', 'lnd', 'clm2', 
+                               'paramdata', 'clm_erw_params_c240718.nc')
+ds.to_netcdf(output_filename, encoding = encoding)
 
-hr.close()
-
-os.remove("clm_params.erw_temp.nc")
+print(f'NetCDF file {output_filename} created successfully.')
