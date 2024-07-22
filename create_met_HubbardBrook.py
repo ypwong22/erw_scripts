@@ -6,17 +6,17 @@ import pandas as pd
 
 
 # ------- user input -------------
-site = "HBR_2"
+site = "HBR"
 start_year = 2012
 end_year = 2022
 time_offset = 0  # Standard time offset from UTC - but the CSV file is already aligned
 npd = 24  # number of time steps per day (48 = half hourly)
-if site == 'HBR_1':
-    mylon = 360-71.728825  # site longitude (0 to 360)
-    mylat = 43.9556695  # site latitude
-elif site == 'HBR_2':
-    mylon = 360-71.478825
-    mylat = 43.9556695
+#if site == 'HBR_1':
+mylon = 360-71.728825  # site longitude (0 to 360)
+mylat = 43.9556695  # site latitude
+#elif site == 'HBR_2':
+#    mylon = 360-71.478825
+#    mylat = 43.9556695
 measurement_height = 2  # tower height (m)
 filename = os.path.join('./temp', f'downscaling_result_final.csv')
 calc_flds = False  # use T and RH to comput FLDS (use if data missing or sparse)

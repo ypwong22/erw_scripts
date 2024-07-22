@@ -82,10 +82,10 @@ ds = xr.Dataset({
     'primary_stoi_proton': ('nminerals', np.array([ # one can see this from valence
         2, 4, 4, 8, 4, 1, 6.4, 4.9, 4, 2
     ])),
-    'primary_stoi_cations': (('nminerals', 'ncations'), np.array([
+    'primary_stoi_cations': (('ncations', 'nminerals'), np.array([
         [1,0,0,0,0], [0,2,0,0,0], [0,0,1,0,1], [1,0,0,0,2], [2,0,0,0,0], 
         [1,0,0,0,0], [0.6,0,0.4,0,1.6], [0.9,0.9,0.1,0,0.4],[0,0,1,0,1],[0,1,0,0,0]
-    ])), # one can see this from the chemical formula; except epidote
+    ]).T), # one can see this from the chemical formula; except epidote
     'primary_stoi_h2o': ('nminerals', np.array([1, 2, 2, 4, 2, 0, 3.2, 2, 2, 1])),
     'primary_stoi_sio2': ('nminerals', np.array([1, 1, 3, 2, 3, 0, 2.4, 1.9, 3, 1])),
     'primary_stoi_hco3': ('nminerals', np.array([0, 0, 0, 0, 0, 1, 0, 0, 0, 0])),
