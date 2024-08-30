@@ -92,6 +92,7 @@ ds = xr.Dataset({
     'primary_mass': ('nminerals', np.array([116.159, 140.6931,  262.22, 278.21, 483.22, 
                                             100.0872, 271.937, 236.371, 278.35, 100.4])),
     'cations_mass': ('ncations', np.array([40.078, 24.305, 22.99, 39.0983, 26.98])),
+    'cations_diffusivity': ('ncations', np.array([0.793e-9, 0.705e-9, 1.33e-9, 1.96e-9, 0.559e-9])),
     'cations_valence': ('ncations', np.array([2, 2, 1, 1, 3])),
     'minsecs_mass': ('nminsecs', np.array([100.0872, 258.1604])),
     'log_keq_minsecs': ('nminsecs', np.array([-8.48, -6.8101])),
@@ -110,6 +111,7 @@ ds['primary_stoi_cations'].attrs = {'long_name': 'reaction stoichiometry coeffic
 ds['primary_stoi_sio2'].attrs = {'long_name': 'reaction stoichiometry coefficient in front of SiO2', 'unit': ''}
 ds['primary_mass'].attrs = {'long_name': 'molar mass of the primary minerals', 'unit': 'g mol-1'}
 ds['cations_mass'].attrs = {'long_name': 'molar mass of the cations', 'unit': 'g mol-1'}
+ds['cations_diffusivity'].attrs = {'long_name': 'diffusion coefficients of the cations in water', 'unit': 'm2 s-1'}
 ds['cations_valence'].attrs = {'long_name': 'valence of the cations', 'unit': ''}
 ds['minsecs_mass'].attrs = {'long_name': 'molar mass of the secondary minerals', 'unit': 'g mol-1'}
 ds['log_keq_minsecs'].attrs = {'long_name': 'log10 of equilibrium constants for secondary mineral dissolution', 'unit': ''}
@@ -140,7 +142,7 @@ for data_var in ds.data_vars:
         encoding[data_var] = {'_FillValue': fill}
 
 # Save the dataset to a NetCDF file
-output_filename = os.path.join(os.environ['PROJDIR'], 'E3SM', 'inputdata', 'lnd', 'clm2', 
+output_filename = os.path.join(os.environ['E3SM_ROOT'], 'inputdata', 'lnd', 'clm2', 
                                'paramdata', 'clm_erw_params_c240718.nc')
 ds.to_netcdf(output_filename, encoding = encoding)
 
