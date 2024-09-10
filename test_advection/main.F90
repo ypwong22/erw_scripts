@@ -3,10 +3,22 @@
 module global_parameters
     implicit none
     integer, parameter :: mixing_layer = 6
-    ! change to uniform 0.1m grid, 10 layers
     real(8), parameter :: zsoi(7) = (/0.0071, 0.0279, 0.0623, 0.1189, 0.2122, 0.3661, 0.6198/)
     real(8), parameter :: zisoi(7) = (/0.0175, 0.0451, 0.0906, 0.1655, 0.2891, 0.4929, 0.8289/)
     real(8), parameter :: dzsoi_decomp(7) = (/0.0175, 0.0276, 0.0455, 0.0750, 0.1236, 0.2038, 0.3360/)
+
+    ! change to uniform 0.1m grid, 10 layers
+    !integer, parameter :: mixing_layer = 10
+    !real(8) :: zsoi(1:mixing_layer+1)
+    !real(8) :: zisoi(1:mixing_layer+1)
+    !real(8) :: dzsoi_decomp(1:mixing_layer+1)
+
+    !! change to uniform 0.2m grid, 5 layers
+    !integer, parameter :: mixing_layer = 5
+    !real(8), parameter :: zsoi(6) = (/0.1, 0.3, 0.5, 0.7, 0.9, 1.05/)
+    !real(8), parameter :: zisoi(6) = (/0.2, 0.4, 0.6, 0.8, 1.0, 1.1/)
+    !real(8), parameter :: dzsoi_decomp(6) = (/0.2, 0.2, 0.2, 0.2, 0.2, 0.1/)
+
 end module global_parameters
 
 program main
@@ -25,18 +37,39 @@ program main
 
   vwc(1:mixing_layer) = 0.25
 
-  conc_trcr(1:mixing_layer) = 1e-5 * vwc(1) * 1e3 ! mol/L water => mol/m3 soil
-  adv_flux(1:mixing_layer+1) = -1e-10 ! m/s
-  diffus(1:mixing_layer) = 7.93e-10
-  source(1:mixing_layer) = 0.
-  dtime = 3600.
-  surf_bc = 1e-3 * 1e3 ! mol/L water => mol/m3 soil
+  conc_trcr(1:mixing_layer) = 1e-5_8 * vwc(1) ! * 1.e3_8 ! mol/L water => mol/m3 soil
+  adv_flux(1:mixing_layer+1) = -1e-10_8 ! m/s
+  diffus(1:mixing_layer) = 7.93e-10_8
+  source(1:mixing_layer) = 0._8
+  dtime = 3600._8
+  surf_bc = 1e-3_8 ! * 1.e3_8 ! mol/L water => mol/m3 soil
+
+  !zsoi(1) = 0.5_8 / mixing_layer !* 7._8
+  !zisoi(1) = 1._8 / mixing_layer !* 7._8
+  !dzsoi_decomp(1) = 1._8 / mixing_layer !* 7._8
+  !do j = 2, mixing_layer+1
+  !    zsoi(j) = zsoi(j-1) + 1._8 / mixing_layer !* 7._8 
+  !    zisoi(j) = zisoi(j-1) + 1._8 / mixing_layer ! * 7._8
+  !    dzsoi_decomp(j) = 1._8 / mixing_layer ! * 7._8
+  !end do
+  ! print *, zsoi(1), zsoi(2), zsoi(3), zisoi(1), zisoi(2), zisoi(3), dzsoi_decomp(1), dzsoi_decomp(2), dzsoi_decomp(3)
+
+  !surf_bc = surf_bc / 1.e3_8
+  !do j = 1, mixing_layer+1
+  !  zsoi(j) = zsoi(j) * 10._8
+  !  zisoi(j) = zisoi(j) * 10._8
+  !  dzsoi_decomp(j) = dzsoi_decomp(j) * 10._8
+  !  if (j < mixing_layer+1) then
+  !    diffus(j) = diffus(j) * 1.e2_8
+  !    conc_trcr(j) = conc_trcr(j) / 1e3_8
+  !  end if
+  !end do
 
   open(newunit=unit_num, file='output.csv', status='replace', action='write')
 
-  write(unit_num, '(I0,",",1pe13.4,",",1pe13.4,",",1pe13.4,",",1pe13.4,",",1pe13.4,",",1pe13.4)') 0, conc_trcr
+  write(unit_num, '(I0,",",1pe13.4,",",1pe13.4,",",1pe13.4,",",1pe13.4,",",1pe13.4)') 0, conc_trcr(1:5)
 
-  do i = 1,2678400
+  do i = 1,7440000
     call advection_diffusion(conc_trcr(1:mixing_layer),adv_flux(1:mixing_layer+1), &
       diffus(1:mixing_layer),source(1:mixing_layer),surf_bc,dtime, & 
       vwc(1:mixing_layer),conc_change_rate(1:mixing_layer))
@@ -46,7 +79,7 @@ program main
     end do
 
     if (mod(i, 3600) == 1) then
-      write(unit_num, '(I0,",",1pe13.4,",",1pe13.4,",",1pe13.4,",",1pe13.4,",",1pe13.4,",",1pe13.4)') i, conc_trcr
+    write(unit_num, '(I0,",",1pe13.4,",",1pe13.4,",",1pe13.4,",",1pe13.4,",",1pe13.4)') i, conc_trcr(1:5)
     end if
   end do
 
@@ -77,10 +110,10 @@ contains
     real(8) :: w_m1, w_p1                   ! Weights for calculating harmonic mean of diffusivity
     real(8) :: d_m1, d_p1                   ! Harmonic mean of diffusivity
     real(8) :: vwc_m1, vwc_p1               ! Harmonic mean of soil moisture
-    real(8) :: a_tri(0:mixing_layer+1)      ! "a" vector for tridiagonal matrix
-    real(8) :: b_tri(0:mixing_layer+1)      ! "b" vector for tridiagonal matrix
-    real(8) :: c_tri(0:mixing_layer+1)      ! "c" vector for tridiagonal matrix
-    real(8) :: r_tri(0:mixing_layer+1)      ! "r" vector for tridiagonal solution
+    real(8) :: a_tri(1:mixing_layer)      ! "a" vector for tridiagonal matrix
+    real(8) :: b_tri(1:mixing_layer)      ! "b" vector for tridiagonal matrix
+    real(8) :: c_tri(1:mixing_layer)      ! "c" vector for tridiagonal matrix
+    real(8) :: r_tri(1:mixing_layer)      ! "r" vector for tridiagonal solution
     real(8) :: d_p1_zp1(1:mixing_layer+1)   ! diffusivity/delta_z for next j  (set to zero for no diffusion)
     real(8) :: d_m1_zm1(1:mixing_layer+1)   ! diffusivity/delta_z for previous j (set to zero for no diffusion)
     real(8) :: f_p1(1:mixing_layer+1)       ! water flux for next j
@@ -94,12 +127,13 @@ contains
     integer :: j, info
 
     ! Statement function
-    aaa (pe) = max (0., (1. - 0.1 * abs(pe))**5)  ! "A" function from Patankar, Table 5.2, pg 95
+    ! Tested varying the statement functions, little effect
+    aaa (pe) = max (0._8, (1. - 0.1 * abs(pe))**5)  ! "A" function from Patankar, Table 5.2, pg 95
 
     ! Set the distance between the node and the one ABOVE it   
     dz_node(1) = zsoi(1)
     do j = 2,mixing_layer+1
-      dz_node(j)= zsoi(j) - zsoi(j-1)
+      dz_node(j)= -zsoi(j-1) + zsoi(j)
     enddo
 
     !print *, 'adv_flux',adv_flux(1:mixing_layer+1)
@@ -114,59 +148,60 @@ contains
     ! pe: Peclet number (ratio of convection to diffusion)
     do j = 1,mixing_layer
       if (j == 1) then
-        d_m1_zm1(j) = 0. ! no diffusion between j = 1 and atmosphere
-        w_p1 = (zsoi(j+1) - zisoi(j)) / dz_node(j+1)
-        if ( diffus(j+1) > 0. .and. diffus(j) > 0.) then
-          d_p1 = 1. / ((1. - w_p1) / diffus(j) + w_p1 / diffus(j+1)) ! Harmonic mean of diffus
-        else
-          d_p1 = 0.
-        endif
-        d_p1_zp1(j) = d_p1 / dz_node(j+1) ! Eq. 5.9, D = \Tau / \delta x
-        vwc_m1 = vwc(j)
-        vwc_p1 = 1. / ((1. - w_p1) / vwc(j) + w_p1 / vwc(j+1))
-        f_m1(j) = adv_flux(j) / vwc_m1 ! Include infiltration here
-        f_p1(j) = adv_flux(j+1) / vwc_p1
-        pe_m1(j) = 0.
-        pe_p1(j) = f_p1(j) / d_p1_zp1(j) ! Peclet #
+          d_m1_zm1(j) = 0._8 ! no diffusion between j = 1 and atmosphere
+          w_p1 = (zsoi(j+1) - zisoi(j)) / dz_node(j+1)
+          if ( diffus(j+1) > 0. .and. diffus(j) > 0.) then
+            d_p1 = 1._8 / ((1._8 - w_p1) / diffus(j) + w_p1 / diffus(j+1)) ! Harmonic mean of diffus
+          else
+            d_p1 = 0._8
+          endif
+          d_p1_zp1(j) = d_p1 / dz_node(j+1) ! Eq. 5.9, D = \Tau / \delta x
+          vwc_m1 = vwc(j)
+          vwc_p1 = 1._8 / ((1._8 - w_p1) / vwc(j) + w_p1 / vwc(j+1))
+          f_m1(j) = adv_flux(j) / vwc_m1 ! Include infiltration here
+          f_p1(j) = adv_flux(j+1) / vwc_p1
+          pe_m1(j) = 0._8
+          pe_p1(j) = f_p1(j) / d_p1_zp1(j) ! Peclet #
       elseif (j == mixing_layer) then
           ! At the bottom, assume no gradient in d_z (i.e., they're the same)
           w_m1 = (zisoi(j-1) - zsoi(j-1)) / dz_node(j)
           if ( diffus(j) > 0. .and. diffus(j-1) > 0.) then
-            d_m1 = 1. / ((1. - w_m1) / diffus(j) + w_m1 / diffus(j-1)) ! Harmonic mean of diffus
+            d_m1 = 1._8 / ((1._8 - w_m1) / diffus(j) + w_m1 / diffus(j-1)) ! Harmonic mean of diffus
           else
-            d_m1 = 0.
+            d_m1 = 0._8
           endif
           d_m1_zm1(j) = d_m1 / dz_node(j)
           d_p1_zp1(j) = d_m1_zm1(j) ! Set to be the same
-          vwc_m1 = 1. / ((1. - w_m1) / vwc(j-1) + w_m1 / vwc(j))
+          vwc_m1 = 1._8 / ((1._8 - w_m1) / vwc(j-1) + w_m1 / vwc(j))
           f_m1(j) = adv_flux(j) / vwc_m1
-          ! f_p1(j) = adv_flux(j+1) / vwc(j)
-          ! f_p1(j) = 0.
+          f_p1(j) = adv_flux(j+1) / vwc(j)
+          ! f_p1(j) = 0._8
           pe_m1(j) = f_m1(j) / d_m1_zm1(j) ! Peclet #
           pe_p1(j) = f_p1(j) / d_p1_zp1(j) ! Peclet #
       else
           ! Use distance from j-1 node to interface with j divided by distance between nodes
           w_m1 = (zisoi(j-1) - zsoi(j-1)) / dz_node(j)
           if ( diffus(j-1) > 0. .and. diffus(j) > 0.) then
-            d_m1 = 1. / ((1. - w_m1) / diffus(j) + w_m1 / diffus(j-1)) ! Harmonic mean of diffus
+            d_m1 = 1._8 / ((1._8 - w_m1) / diffus(j) + w_m1 / diffus(j-1)) ! Harmonic mean of diffus
           else
-            d_m1 = 0.
+            d_m1 = 0._8
           endif
           w_p1 = (zsoi(j+1) - zisoi(j)) / dz_node(j+1)
           if ( diffus(j+1) > 0. .and. diffus(j) > 0.) then
-            d_p1 = 1. / ((1. - w_p1) / diffus(j) + w_p1 / diffus(j+1)) ! Harmonic mean of diffus
+            d_p1 = 1._8 / ((1._8 - w_p1) / diffus(j) + w_p1 / diffus(j+1)) ! Harmonic mean of diffus
           else
-            d_p1 = (1. - w_p1) * diffus(j) + w_p1 * diffus(j+1) ! Arithmetic mean of diffus
+            d_p1 = (1._8 - w_p1) * diffus(j) + w_p1 * diffus(j+1) ! Arithmetic mean of diffus
           endif
           d_m1_zm1(j) = d_m1 / dz_node(j)
           d_p1_zp1(j) = d_p1 / dz_node(j+1)
-          vwc_m1 = 1. / ((1. - w_m1) / vwc(j-1) + w_m1 / vwc(j))
-          vwc_p1 = 1. / ((1. - w_p1) / vwc(j) + w_p1 / vwc(j+1))
+          vwc_m1 = 1._8 / ((1._8 - w_m1) / vwc(j-1) + w_m1 / vwc(j))
+          vwc_p1 = 1._8 / ((1._8 - w_p1) / vwc(j) + w_p1 / vwc(j+1))
           f_m1(j) = adv_flux(j) / vwc_m1
           f_p1(j) = adv_flux(j+1) / vwc_p1
           pe_m1(j) = f_m1(j) / d_m1_zm1(j) ! Peclet #
           pe_p1(j) = f_p1(j) / d_p1_zp1(j) ! Peclet #
       end if
+
     enddo ! j; mixing_layer
 
 
@@ -179,51 +214,40 @@ contains
     ! b_tri = a_above+a_below+vwc*dz/dt
     ! -c_tri = D_below*A(Pe)+max(F_below,0); D_below = diffus_below/dz
     ! r_tri = b = source_const*dz + conc*vwc*dz/dt
-    do j = 0,mixing_layer +1
+    do j = 1,mixing_layer
+      a_p_0 =  dzsoi_decomp(j) / dtime / vwc(j)
 
-      if (j > 0 .and. j < mixing_layer+1) then
-          a_p_0 =  dzsoi_decomp(j) / dtime / vwc(j) ! Should this be multiplied by layer water content (for vwc)?
-      endif
-
-      if (j == 0) then ! top layer (atmosphere)
-          a_tri(j) = 0.
-          b_tri(j) = 1.
-          c_tri(j) = -1.
-          r_tri(j) = 0.
-      elseif (j == 1) then
-          a_tri(j) = -(d_m1_zm1(j) * aaa(pe_m1(j)) + max( f_m1(j), 0.)) ! Eqn 5.47 Patankar
-          c_tri(j) = -(d_p1_zp1(j) * aaa(pe_p1(j)) + max(-f_p1(j), 0.))
-          b_tri(j) = -a_tri(j) - c_tri(j) + a_p_0
-          ! r_tri includes infiltration assuming same concentration as top layer. May want to change to either provide upper boundary condition or include in source term
-          ! r_tri(j) = source(j) * dzsoi_decomp(j) + (a_p_0 - adv_flux(j)) * conc_trcr(j)
+      if (j == 1) then
+        a_tri(j) = 0._8
+        c_tri(j) = -f_p1(j) * 0.5_8 - d_p1_zp1(j)
+        if(adv_flux(j)<0) then ! downward flow (infiltration)
+          b_tri(j) = d_p1_zp1(j) - f_p1(j) * 0.5_8 + a_p_0
+          r_tri(j) = source(j) * dzsoi_decomp(j) + a_p_0 * conc_trcr(j) - adv_flux(j)*surf_bc
+        else
+          b_tri(j) = d_p1_zp1(j) + f_m1(j) - f_p1(j) * 0.5_8 + a_p_0
           r_tri(j) = source(j) * dzsoi_decomp(j) + a_p_0 * conc_trcr(j)
-          if(adv_flux(j)<0) then ! downward flow (infiltration)
-            r_tri(j) = r_tri(j) - adv_flux(j)*surf_bc
-            !  write (iulog,*) __LINE__,adv_flux(j),surf_bc,adv_flux(j)*surf_bc
-          else ! upward flow to the surface
-            r_tri(j) = r_tri(j) - adv_flux(j)*conc_trcr(j)
-            ! write (iulog,*) __LINE__,adv_flux(j),conc_trcr(j),adv_flux(j)*conc_trcr(j)
-          endif
-          
-      elseif (j < mixing_layer+1) then
-          a_tri(j) = -(d_m1_zm1(j) * aaa(pe_m1(j)) + max( f_m1(j), 0.)) ! Eqn 5.47 Patankar
-          c_tri(j) = -(d_p1_zp1(j) * aaa(pe_p1(j)) + max(-f_p1(j), 0.))
-          b_tri(j) = -a_tri(j) - c_tri(j) + a_p_0
-          r_tri(j) = source(j) * dzsoi_decomp(j) + a_p_0 * conc_trcr(j) ! Eq. 5.57
+        end if
 
-      else ! j==mixing_layer+1; 0 concentration gradient at bottom
-          a_tri(j) = -1.
-          b_tri(j) = 1.
-          c_tri(j) = 0. 
-          r_tri(j) = 0.
-      endif
+        ! print *, d_m1_zm1(j), aaa(pe_m1(j)), f_m1(j), d_p1_zp1(j), -f_p1(j)
+        ! print *, a_tri(j), b_tri(j), c_tri(j), r_tri(j)
+      elseif (j < mixing_layer) then
+          a_tri(j) = f_m1(j) * 0.5_8 - d_m1_zm1(j)
+          c_tri(j) = -f_p1(j) * 0.5_8 - d_p1_zp1(j)
+          b_tri(j) = d_m1_zm1(j) + d_p1_zp1(j) + f_m1(j) * 0.5_8 - f_p1(j) * 0.5_8 + a_p_0
+          r_tri(j) = source(j) * dzsoi_decomp(j) + a_p_0 * conc_trcr(j)
+      else
+          a_tri(j) = f_m1(j) * 0.5_8 - d_m1_zm1(j)
+          c_tri(j) = 0._8
+          b_tri(j) = d_m1_zm1(j) + d_p1_zp1(j) + f_m1(j) * 0.5_8 - f_p1(j) + a_p_0
+          r_tri(j) = source(j) * dzsoi_decomp(j) + a_p_0 * conc_trcr(j)      
+      end if
     enddo ! j; mixing_layer
 
     ! Solve for the concentration profile for this time step
     ! call Tridiagonal(0, mixing_layer+1, 0, a_tri, b_tri, c_tri, r_tri, conc_after)
     ! This is the LAPACK tridiagonal solver which gave more accurate results in my testing
-    call dgtsv( mixing_layer+2, 1, c_tri(0:mixing_layer), b_tri, a_tri(1:mixing_layer+1),  & 
-                r_tri, mixing_layer+2, info )
+    call dgtsv( mixing_layer, 1, c_tri(1:mixing_layer-1), b_tri, a_tri(2:mixing_layer),  & 
+                r_tri, mixing_layer, info )
 
     ! if(info < 0) call endrun(msg='dgtsv error in adv_diff line __LINE__: illegal argument')
     ! if(info > 0) call endrun(msg='dgtsv error in adv_diff line __LINE__: singular matrix')
@@ -231,6 +255,12 @@ contains
       conc_after(j) = r_tri(j) ! dgtsv solver saves output into the r_tri matrix
       conc_change_rate(j) = (conc_after(j)-conc_trcr(j))/dtime
     end do
+
+    !j = 1
+    !if (j == 1) then
+    !  print *, pe_m1(j), pe_p1(j), aaa(pe_m1(j)), aaa(pe_p1(j)), f_m1(j), -f_p1(j)
+    !print *, conc_change_rate(j), conc_trcr(j)
+    ! end if
 
   end subroutine advection_diffusion
 
