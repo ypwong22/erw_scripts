@@ -2,16 +2,16 @@
 
 module global_parameters
     implicit none
-    !integer, parameter :: nlevbed = 6
-    !real(8), parameter :: zsoi(7) = (/0.0071, 0.0279, 0.0623, 0.1189, 0.2122, 0.3661, 0.6198/)
-    !real(8), parameter :: zisoi(7) = (/0.0175, 0.0451, 0.0906, 0.1655, 0.2891, 0.4929, 0.8289/)
-    !real(8), parameter :: dzsoi_decomp(7) = (/0.0175, 0.0276, 0.0455, 0.0750, 0.1236, 0.2038, 0.3360/)
+    integer, parameter :: nlevbed = 6
+    real(8), parameter :: zsoi(7) = (/0.0071, 0.0279, 0.0623, 0.1189, 0.2122, 0.3661, 0.6198/)
+    real(8), parameter :: zisoi(7) = (/0.0175, 0.0451, 0.0906, 0.1655, 0.2891, 0.4929, 0.8289/)
+    real(8), parameter :: dzsoi_decomp(7) = (/0.0175, 0.0276, 0.0455, 0.0750, 0.1236, 0.2038, 0.3360/)
 
     ! change to uniform 0.1m grid, 10 layers
-    integer, parameter :: nlevbed = 10
-    real(8) :: zsoi(1:nlevbed+1)
-    real(8) :: zisoi(1:nlevbed+1)
-    real(8) :: dzsoi_decomp(1:nlevbed+1)
+    !integer, parameter :: nlevbed = 10
+    !real(8) :: zsoi(1:nlevbed+1)
+    !real(8) :: zisoi(1:nlevbed+1)
+    !real(8) :: dzsoi_decomp(1:nlevbed+1)
 
     !! change to uniform 0.2m grid, 5 layers
     !integer, parameter :: nlevbed = 5
@@ -31,27 +31,27 @@ program main
   real(8) :: source(1:nlevbed)
   real(8) :: surf_bc
   real(8) :: dtime
-  real(8) :: vwc(1:nlevbed+1)
+  real(8) :: vwc(1:nlevbed)
   real(8) :: conc_change_rate(1:nlevbed)
   integer :: i, j, unit_num
 
-  vwc(1:nlevbed+1) = 0.25_8
+  vwc(1:nlevbed) = 0.25
 
   conc_trcr(1:nlevbed) = 1e-5_8 * vwc(1) ! * 1.e3_8 ! mol/L water => mol/m3 soil
-  adv_flux(1:nlevbed+1) = -1e-7_8 ! m/s
+  adv_flux(1:nlevbed+1) = -1e-10_8 ! m/s
   diffus(1:nlevbed) = 7.93e-10_8
   source(1:nlevbed) = 0._8
   dtime = 3600._8
   surf_bc = 1e-3_8 ! * 1.e3_8 ! mol/L water => mol/m3 soil
 
-  zsoi(1) = 0.5_8 / nlevbed !* 7._8
-  zisoi(1) = 1._8 / nlevbed !* 7._8
-  dzsoi_decomp(1) = 1._8 / nlevbed !* 7._8
-  do j = 2, nlevbed+1
-      zsoi(j) = zsoi(j-1) + 1._8 / nlevbed !* 7._8 
-      zisoi(j) = zisoi(j-1) + 1._8 / nlevbed ! * 7._8
-      dzsoi_decomp(j) = 1._8 / nlevbed ! * 7._8
-  end do
+  !zsoi(1) = 0.5_8 / nlevbed !* 7._8
+  !zisoi(1) = 1._8 / nlevbed !* 7._8
+  !dzsoi_decomp(1) = 1._8 / nlevbed !* 7._8
+  !do j = 2, nlevbed+1
+  !    zsoi(j) = zsoi(j-1) + 1._8 / nlevbed !* 7._8 
+  !    zisoi(j) = zisoi(j-1) + 1._8 / nlevbed ! * 7._8
+  !    dzsoi_decomp(j) = 1._8 / nlevbed ! * 7._8
+  !end do
   ! print *, zsoi(1), zsoi(2), zsoi(3), zisoi(1), zisoi(2), zisoi(3), dzsoi_decomp(1), dzsoi_decomp(2), dzsoi_decomp(3)
 
   !surf_bc = surf_bc / 1.e3_8
@@ -69,18 +69,18 @@ program main
 
   write(unit_num, '(I0,",",1pe13.4,",",1pe13.4,",",1pe13.4,",",1pe13.4,",",1pe13.4)') 0, conc_trcr(1:5)
 
-  do i = 1,744
+  do i = 1,7440000
     call advection_diffusion(conc_trcr(1:nlevbed),adv_flux(1:nlevbed+1), &
       diffus(1:nlevbed),source(1:nlevbed),surf_bc,dtime, & 
-      vwc(1:nlevbed+1),conc_change_rate(1:nlevbed))
+      vwc(1:nlevbed),conc_change_rate(1:nlevbed))
 
     do j = 1,nlevbed
       conc_trcr(j) = conc_change_rate(j) * dtime + conc_trcr(j)
     end do
 
-    !if (mod(i, 3600) == 1) then
+    if (mod(i, 3600) == 1) then
     write(unit_num, '(I0,",",1pe13.4,",",1pe13.4,",",1pe13.4,",",1pe13.4,",",1pe13.4)') i, conc_trcr(1:5)
-    !end if
+    end if
   end do
 
   close(unit_num)
@@ -101,12 +101,10 @@ contains
 
     real(8), intent(in) :: surf_bc                 ! Surface boundary layer concentration (for infiltration) (e.g. mol/m3 [water])
     real(8), intent(in) :: dtime                   ! Time step (s)
-    real(8), intent(in) :: vwc(1:nlevbed+1)       ! Volumetric soil moisture in layer (m3/m3)
+    real(8), intent(in) :: vwc(1:nlevbed)     ! Volumetric soil moisture in layer (m3/m3)
     real(8), intent(out):: conc_change_rate(1:nlevbed) ! Bulk concentration (e.g. mol/m3/s)
 
     ! Local variables
-    real(8) :: aaa                          ! "A" function in Patankar
-    real(8) :: pe                           ! Pe for "A" function in Patankar
     real(8) :: w_m1, w_p1                   ! Weights for calculating harmonic mean of diffusivity
     real(8) :: d_m1, d_p1                   ! Harmonic mean of diffusivity
     real(8) :: vwc_m1, vwc_p1               ! Harmonic mean of soil moisture
@@ -114,15 +112,13 @@ contains
     real(8) :: b_tri(1:nlevbed+1)      ! "b" vector for tridiagonal matrix
     real(8) :: c_tri(1:nlevbed+1)      ! "c" vector for tridiagonal matrix
     real(8) :: r_tri(1:nlevbed+1)      ! "r" vector for tridiagonal solution
-    real(8) :: d_p1_zp1(1:nlevbed+1)   ! diffusivity/delta_z for next j  (set to zero for no diffusion)
-    real(8) :: d_m1_zm1(1:nlevbed+1)   ! diffusivity/delta_z for previous j (set to zero for no diffusion)
-    real(8) :: f_p1(1:nlevbed+1)       ! water flux for next j
-    real(8) :: f_m1(1:nlevbed+1)       ! water flux for previous j
-    real(8) :: pe_p1(1:nlevbed+1)      ! Peclet # for next j
-    real(8) :: pe_m1(1:nlevbed+1)      ! Peclet # for previous j
+    real(8) :: d_p1_zp1(1:nlevbed)     ! diffusivity/delta_z for next j  (set to zero for no diffusion)
+    real(8) :: d_m1_zm1(1:nlevbed)     ! diffusivity/delta_z for previous j (set to zero for no diffusion)
+    real(8) :: f_p1(1:nlevbed)         ! water flux for next j
+    real(8) :: f_m1(1:nlevbed)         ! water flux for previous j
     real(8) :: dz_node(1:nlevbed+1)    ! difference between nodes
     real(8) :: a_p_0
-    real(8) :: conc_after(0:nlevbed+1)
+    real(8) :: conc_after(1:nlevbed+1)
 
     integer :: j, info
 
@@ -156,8 +152,6 @@ contains
           vwc_p1 = 1._8 / ((1._8 - w_p1) / vwc(j) + w_p1 / vwc(j+1))
           f_m1(j) = adv_flux(j) / vwc_m1 ! Include infiltration here
           f_p1(j) = adv_flux(j+1) / vwc_p1
-          pe_m1(j) = 0._8
-          pe_p1(j) = f_p1(j) / d_p1_zp1(j) ! Peclet #
       elseif (j == nlevbed) then
           ! At the bottom, assume no gradient in d_z (i.e., they're the same)
           w_m1 = (zisoi(j-1) - zsoi(j-1)) / dz_node(j)
@@ -170,10 +164,8 @@ contains
           d_p1_zp1(j) = d_m1_zm1(j) ! Set to be the same
           vwc_m1 = 1._8 / ((1._8 - w_m1) / vwc(j-1) + w_m1 / vwc(j))
           f_m1(j) = adv_flux(j) / vwc_m1
-          f_p1(j) = adv_flux(j+1) / vwc(j)
-          ! f_p1(j) = 0._8
-          pe_m1(j) = f_m1(j) / d_m1_zm1(j) ! Peclet #
-          pe_p1(j) = f_p1(j) / d_p1_zp1(j) ! Peclet #
+          !f_p1(j) = adv_flux(j+1) / vwc(j)
+          f_p1(j) = 0._8
       else
           ! Use distance from j-1 node to interface with j divided by distance between nodes
           w_m1 = (zisoi(j-1) - zsoi(j-1)) / dz_node(j)
@@ -194,8 +186,6 @@ contains
           vwc_p1 = 1._8 / ((1._8 - w_p1) / vwc(j) + w_p1 / vwc(j+1))
           f_m1(j) = adv_flux(j) / vwc_m1
           f_p1(j) = adv_flux(j+1) / vwc_p1
-          pe_m1(j) = f_m1(j) / d_m1_zm1(j) ! Peclet #
-          pe_p1(j) = f_p1(j) / d_p1_zp1(j) ! Peclet #
       end if
 
     enddo ! j; nlevbed
@@ -210,7 +200,7 @@ contains
     ! b_tri = a_above+a_below+vwc*dz/dt
     ! -c_tri = D_below*A(Pe)+max(F_below,0); D_below = diffus_below/dz
     ! r_tri = b = source_const*dz + conc*vwc*dz/dt
-    do j = 1,nlevbed+1
+    do j = 1,nlevbed
       a_p_0 =  dzsoi_decomp(j) / dtime / vwc(j)
 
       if (j == 1) then
@@ -235,7 +225,7 @@ contains
           !a_tri(j) = f_m1(j) * 0.5_8 - d_m1_zm1(j)
           !c_tri(j) = 0._8
           !b_tri(j) = d_m1_zm1(j) + d_p1_zp1(j) + f_m1(j) * 0.5_8 - f_p1(j) * 0.5_8 + a_p_0
-          !r_tri(j) = source(j) * dzsoi_decomp(j) + a_p_0 * conc_trcr(j)      
+          !r_tri(j) = source(j) * dzsoi_decomp(j) + a_p_0 * conc_trcr(j)
           a_tri(j) = -1._8
           b_tri(j) = 1._8
           c_tri(j) = 0._8 
