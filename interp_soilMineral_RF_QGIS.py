@@ -3,7 +3,9 @@ from qgis.analysis import QgsRasterCalculator, QgsRasterCalculatorEntry
 import processing
 import os
 
-input_raster_path = os.path.join(os.getcwd(), 'RF_calcite.tif')
+varname = 'Kaolinit'
+
+input_raster_path = os.path.join(os.getcwd(), f'RF_{varname}.tif')
 output_path = os.path.join(os.getcwd())
 
 band_count = 10
@@ -14,7 +16,7 @@ band_count = 10
 filled_bands = []
 filled_ucs = []
 
-input_raster = QgsRasterLayer(input_raster_path, "RF_calcite")
+input_raster = QgsRasterLayer(input_raster_path, f"RF_{varname}")
 QgsProject.instance().addMapLayer(input_raster)
 
 for band in range(1, band_count + 1):
@@ -77,7 +79,7 @@ processing.run("gdal:merge", {
     'OPTIONS': '',
     'EXTRA': '',
     'DATA_TYPE': 5,
-    'OUTPUT': os.path.join(output_path, 'RF_calcite_filled.tif')
+    'OUTPUT': os.path.join(output_path, f'RF_{varname}_filled.tif')
 })
 
 processing.run("gdal:merge", {
@@ -89,13 +91,14 @@ processing.run("gdal:merge", {
     'OPTIONS': '',
     'EXTRA': '',
     'DATA_TYPE': 5,
-    'OUTPUT': os.path.join(output_path, 'RF_calcite_uc.tif')
+    'OUTPUT': os.path.join(output_path, f'RF_{varname}_uc.tif')
 })
 
-output_raster = QgsRasterLayer(os.path.join(output_path, 'RF_calcite_filled.tif'), 
-                               "RF_calcite_filled")
+output_raster = QgsRasterLayer(os.path.join(output_path, f'RF_{varname}_filled.tif'), 
+                               f"RF_{varname}_filled")
 QgsProject.instance().addMapLayer(output_raster)
 
+print(f"Processing complete. Output saved to: {output_path}")
 
 for band in range(1, band_count+1):
     os.remove(os.path.join(output_path, f'temp_input_{band}.tif'))
@@ -106,5 +109,3 @@ for band in range(1, band_count+1):
     os.remove(os.path.join(output_path, f'filled_uc_{band}.tif'))
     os.remove(os.path.join(output_path, f'filled_uc_{band}.tfw'))
     os.remove(os.path.join(output_path, f'filled_uc_{band}.tif.aux.xml'))
-
-print(f"Processing complete. Output saved to: {output_path}")
