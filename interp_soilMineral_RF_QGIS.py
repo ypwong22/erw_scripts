@@ -67,6 +67,11 @@ for band in range(1, band_count + 1):
     filled_bands.append(filled_output)
     filled_ucs.append(filled_uc)
 
+    single_band_raster = None
+    filled_output = None
+    filled_uc = None
+
+
 ###########################################################################
 # Merge bands into a single multi-band raster
 ###########################################################################
