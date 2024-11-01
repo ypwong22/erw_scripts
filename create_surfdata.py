@@ -10,6 +10,7 @@ path_root = os.path.join(os.environ['PROJDIR'], 'E3SM', 'inputdata', 'lnd', 'clm
 #    'HBR_1': {'CEC_TOT': 7, 'CEC_EFF': 7, 'CEC_ACID': 1}
 #}
 
+"""
 ################################################################################################
 # Interpolated NCSS
 
@@ -131,6 +132,7 @@ for site in ['UC_Davis']: # ['HBR']
     hr.close()
 
     os.system(f'rm {path_surffdata}_temp')
+"""
 
 ################################################################################################
 # Hubbard Brook observation

@@ -21,7 +21,7 @@ def vert_interp(target_nodes, input_nodes, input_data, target_single_level,
     -----------
     target_nodes : Union[List[float], np.ndarray]
         List or numpy array of target node depths in meters.
-    
+
     input_nodes : Union[List[float], np.ndarray]
         List or numpy array of input node depths in meters.
 
@@ -29,7 +29,15 @@ def vert_interp(target_nodes, input_nodes, input_data, target_single_level,
         2D numpy array of input data with shape (time, len(input_nodes)).
 
     target_single_level : bool
-        Indicates whether the target nodes are single level. If true, target_interface and input_interfaces are un-used. 
+        Indicates whether the target nodes are single level. If true, target_interface and input_interfaces are un-used.
+
+    target_interfaces : Union[List[float], np.ndarray]
+        List or numpy array of target interfaces depths in meters. Should contain +1 element
+        than target_nodes. 
+
+    input_interfaces : Union[List[float], np.ndarray]
+        List or numpy array of target interfaces depths in meters. Should contain +1 element
+        than input_nodes. 
 
     Returns:
     --------
