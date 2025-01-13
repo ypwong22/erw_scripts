@@ -149,7 +149,7 @@ def bypass_format(filename, met_data, lat, lon, startyear, endyear, edge=0.1,
     output_data.variables['DTIME'].units='days since '+str(startyear)+'-01-01 00:00:00'
     output_data.variables['DTIME'].calendar='noleap'
     n_years = endyear-startyear+1
-    output_data.variables['DTIME'][:] = np.cumsum(np.ones([n_years*365*npd], np.float)/npd)-0.5/npd
+    output_data.variables['DTIME'][:] = np.cumsum(np.ones([n_years*365*npd], float)/npd)-0.5/npd
     output_data.createVariable('LONGXY', 'f8', 'gridcell')
     output_data.variables['LONGXY'].long_name = "longitude"
     output_data.variables['LONGXY'].units = 'degrees E'

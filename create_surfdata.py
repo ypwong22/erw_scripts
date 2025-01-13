@@ -3,7 +3,7 @@ import xarray as xr
 import numpy as np
 import pandas as pd
 
-path_root = os.path.join(os.environ['PROJDIR'], 'E3SM', 'inputdata', 'lnd', 'clm2', 'PTCLM')
+path_root = os.path.join(os.environ['E3SM_ROOT'], 'inputdata', 'lnd', 'clm2', 'PTCLM')
 
 #data_from_gNATSGO = {
 #    'UC_Davis': {'CEC_TOT': 9, 'CEC_EFF': 9, 'CEC_ACID': 1},
@@ -19,7 +19,7 @@ data_cec = pd.read_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 'results'
                        index_col = [0,1])
 nlevsoi = 10
 
-for site in ['UC_Davis']: # ['HBR']
+for site in ['UC_Davis']: # ['HBR']35
     path_surffdata = os.path.join(path_root, site, 'surfdata.nc')
 
     os.system(f'cp {path_surffdata} {path_surffdata}_temp')
@@ -136,16 +136,13 @@ for site in ['UC_Davis']: # ['HBR']
 
 ################################################################################################
 # Hubbard Brook observation
-site = 'HBR'
-
-
 elm_input = pd.read_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 
                                      'results', 'HBR_elm_input.csv'), index_col = 0)
 logkm = pd.read_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 
                                      'results', 'HBR_logkm.csv'), index_col = 0)
 
 
-path_surffdata = os.path.join(path_root, site, 'surfdata.nc')
+path_surffdata = os.path.join(path_root, 'HBR', 'surfdata.nc')
 os.system(f'cp {path_surffdata} {path_surffdata}_temp')
 hr = xr.open_dataset(f'{path_surffdata}_temp')
 
@@ -154,10 +151,10 @@ coords = {'nlevsoi': hr['nlevsoi'], 'lsmlat': hr['lsmlat'], 'lsmlon': hr['lsmlon
 
 
 # Organic matter content needs all layers
-# layer 7 - use Bs, layer 8 - use (Bh+Bsm)/2, layer 9 & 10 - use C
+# layer 9 & 10 - use C
 hr['ORGANIC'] = xr.DataArray(
     np.append(
-        elm_input['OM'].values, [8.307600, 8.2178765, 1.502483, 1.502483]
+        elm_input['OM'].values, [1.256715, 1.256715]
     ).reshape(-1, 1, 1),
     dims = dims,
     coords = coords,
@@ -169,7 +166,7 @@ hr['ORGANIC'] = xr.DataArray(
 # Below are for enhanced weathering; only need top layer
 hr['SOIL_PH'] = xr.DataArray(
     np.append(
-        elm_input['pH'].values, [np.nan, np.nan, np.nan, np.nan]
+        elm_input['pH'].values, [np.nan, np.nan]
     ).reshape(-1, 1, 1),
     dims = dims,
     coords = coords,
@@ -178,7 +175,7 @@ hr['SOIL_PH'] = xr.DataArray(
 
 hr['CEC_TOT'] = xr.DataArray(
     np.append(
-        elm_input['CEC_TOT'].values, [np.nan, np.nan, np.nan, np.nan]
+        elm_input['CEC_TOT'].values, [np.nan, np.nan]
     ).reshape(-1, 1, 1),
     dims = dims,
     coords = coords,
@@ -188,7 +185,7 @@ hr['CEC_TOT'] = xr.DataArray(
 
 hr['CEC_ACID'] = xr.DataArray(
     np.append(
-        elm_input['CEC_ACID'].values, [np.nan, np.nan, np.nan, np.nan]
+        elm_input['CEC_ACID'].values, [np.nan, np.nan]
     ).reshape(-1, 1, 1),
     dims = dims,
     coords = coords,
@@ -199,7 +196,7 @@ hr['CEC_ACID'] = xr.DataArray(
 for a,col in enumerate(['CEC_Ca', 'CEC_Mg', 'CEC_Na', 'CEC_K', 'CEC_Al']):
     hr[f'CEC_EFF_{a+1}'] = xr.DataArray(
         np.append(
-            elm_input[col].values, [np.nan, np.nan, np.nan, np.nan]
+            elm_input[col].values, [np.nan, np.nan]
         ).reshape(-1, 1, 1),
         dims = dims, 
         coords = coords,
@@ -211,7 +208,7 @@ for a,col in enumerate(['CEC_Ca', 'CEC_Mg', 'CEC_Na', 'CEC_K', 'CEC_Al']):
 for a,col in enumerate(['Ca', 'Mg', 'Na', 'K', 'Al']):
     hr[f'LOG_KM_{a+1}'] = xr.DataArray(
         np.append(
-            logkm[col].values, [np.nan, np.nan, np.nan, np.nan]
+            logkm[col].values, [np.nan, np.nan]
         ).reshape(-1, 1, 1),
         dims = dims, 
         coords = coords,
@@ -240,6 +237,31 @@ hr['PCT_CALCITE'] = xr.DataArray(
     attrs = {'long_name': 'percentage naturally occuring CaCO3 in soil mineral', 
                 'units': 'g 100 g-1 soil'}
 )
+
+# add variable soil thickness
+hr['aveDTB'] = xr.DataArray(
+    [[1.]], 
+    dims = ['lsmlat', 'lsmlon'],
+    attrs = {'long_name': 'mean soil depth to bedrock', 
+             'units': 'meters below surface', 
+             'standard_name': 'aveDTB'}
+)
+
+# increase the saturation and inundation fraction
+hr['F0'] = xr.DataArray(
+    [[0.12]], 
+    dims = ['lsmlat', 'lsmlon'],
+    attrs = {'long_name': 'maximum gridcell fractional inundated area', 
+             'units': 'unitless'}
+)
+
+hr['FMAX'] = xr.DataArray(
+    [[0.73]], 
+    dims = ['lsmlat', 'lsmlon'],
+    attrs = {'long_name': 'maximum fractional saturated area', 
+             'units': 'unitless'}
+)
+
 
 hr.to_netcdf(path_surffdata.replace('.nc', '_erw.nc'))
 hr.close()

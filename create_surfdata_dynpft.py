@@ -2,10 +2,11 @@ import os
 import xarray as xr
 import numpy as np
 
-path_root = os.path.join(os.environ['PROJDIR'], 'E3SM', 'inputdata', 'lnd', 'clm2', 'PTCLM')
+path_root = os.path.join(os.environ['E3SM_ROOT'], 'inputdata', 'lnd', 'clm2', 'PTCLM')
 
 mpft = 17
 namendspec = 10
+control = True
 
 for site in ['UC_Davis', 'HBR']:
 
@@ -79,29 +80,27 @@ for site in ['UC_Davis', 'HBR']:
         pct = np.array([100., 0, 0, 0, 0, 0, 0, 0, 0, 0])
         year_of_application = np.where(hr['time'].values == 1999)[0]
 
-    temp = np.full([len(hr['time']), mpft, 1,1], np.nan)
-    temp[year_of_application, :, :, :] = doy
+    temp = np.full([len(hr['time']), mpft, 1,1], doy)
     hr['SOIL_AMENDMENTS_DOY'] = xr.DataArray(temp,
         dims = ['time','mpft','lsmlat','lsmlon'],
         attrs = {'long_name': 'soil amendment application day of year',
                  'units': 'day of year'})
 
-    temp = np.full([len(hr['time']), mpft, 1,1], np.nan)
+    temp = np.full([len(hr['time']), mpft, 1,1], 0.)
     temp[year_of_application, :, :, :] = rate
     hr['SOIL_AMENDMENTS_RATE'] = xr.DataArray(temp,
         dims = ['time','mpft','lsmlat','lsmlon'],
         attrs = {'long_name': 'soil amendment application rate',
                  'units': 'kg/m2/yr'})
 
-    temp = np.full([len(hr['time']), 1,1], np.nan)
-    temp[year_of_application, :, :] = size
+    temp = np.full([len(hr['time']), 1,1], size)
     hr['SOIL_AMENDMENTS_GRAINSIZE'] = xr.DataArray(temp, 
         dims = ['time','lsmlat','lsmlon'],
         attrs = {'long_name': 'grain size of applied soil amendment',
                  'units': 'micro meters'})
 
     temp = np.full([len(hr['time']), namendspec, 1,1], np.nan)
-    temp[year_of_application, :, 0, 0] = pct
+    temp[:, :, 0, 0] = pct.reshape(1, -1)
     hr['SOIL_AMENDMENTS_PCT'] = xr.DataArray(temp, 
         dims = ['time','namendspec','lsmlat','lsmlon'],
         attrs = {'long_name': 'species fraction of applied soil amendment',
@@ -120,6 +119,16 @@ for site in ['UC_Davis', 'HBR']:
     )
 
     hr.to_netcdf(path_surffdata.replace('.nc', '_erw.nc'))
+
+    # add control application
+    temp = np.full([len(hr['time']), mpft, 1,1], 0.)
+    hr['SOIL_AMENDMENTS_RATE'] = xr.DataArray(temp,
+        dims = ['time','mpft','lsmlat','lsmlon'],
+        attrs = {'long_name': 'soil amendment application rate',
+                 'units': 'kg/m2/yr'})
+
+    hr.to_netcdf(path_surffdata.replace('.nc', '_erw_ctrl.nc'))
+
     hr.close()
 
     os.system(f'rm {path_surffdata}_temp')

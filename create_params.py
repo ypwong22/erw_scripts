@@ -93,10 +93,12 @@ ds = xr.Dataset({
                                             100.0872, 271.937, 236.371, 278.35, 100.4])),
     'cations_mass': ('ncations', np.array([40.078, 24.305, 22.99, 39.0983, 26.98])),
     'cations_diffusivity': ('ncations', np.array([0.793e-9, 0.705e-9, 1.33e-9, 1.96e-9, 0.559e-9])),
+    'bicarbonate_diffusivity': np.array([1.180e-9]),
+    'carbonate_diffusivity': np.array([0.955e-9]),
     'cations_valence': ('ncations', np.array([2, 2, 1, 1, 3])),
     'minsecs_mass': ('nminsecs', np.array([100.0872, 258.1604])),
     'log_keq_minsecs': ('nminsecs', np.array([-8.48, -6.8101])),
-    'alpha_minsecs': ('nminsecs', np.array([9e-10, 6.4e-14]))
+    'alpha_minsecs': ('nminsecs', np.array([9e-10, 6.4e-14])),
 })
 
 # Set variable attributes
@@ -112,6 +114,8 @@ ds['primary_stoi_sio2'].attrs = {'long_name': 'reaction stoichiometry coefficien
 ds['primary_mass'].attrs = {'long_name': 'molar mass of the primary minerals', 'unit': 'g mol-1'}
 ds['cations_mass'].attrs = {'long_name': 'molar mass of the cations', 'unit': 'g mol-1'}
 ds['cations_diffusivity'].attrs = {'long_name': 'diffusion coefficients of the cations in water', 'unit': 'm2 s-1'}
+ds['bicarbonate_diffusivity'].attrs = {'long_name': 'diffusion coefficients of HCO3- in water', 'unit': 'm2 s-1'}
+ds['carbonate_diffusivity'].attrs = {'long_name': 'diffusion coefficients of CO3-- in water', 'unit': 'm2 s-1'}
 ds['cations_valence'].attrs = {'long_name': 'valence of the cations', 'unit': ''}
 ds['minsecs_mass'].attrs = {'long_name': 'molar mass of the secondary minerals', 'unit': 'g mol-1'}
 ds['log_keq_minsecs'].attrs = {'long_name': 'log10 of equilibrium constants for secondary mineral dissolution', 'unit': ''}

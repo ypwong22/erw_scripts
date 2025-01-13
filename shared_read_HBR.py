@@ -21,13 +21,20 @@ def read_pheno():
                                     'Hubbard_Brook', 'knb-lter-hbr.51.14',
                                     'HBEF_Phenology_longform.csv'),
                        index_col = 1, parse_dates=True)
-    data = data.loc[data['SEASON'] == 'SPRING', :]
+    data = data.loc[data.index.year >= 2012, :]
 
     # Create a linear regression line and uncertainty intervals
-    x = data['DAY']
-    y = data['Phenology_Stage']
-    res = linregress(x, y)
-    return res.slope, res.intercept, res.stderr
+    data_sp = data.loc[data['SEASON'] == 'SPRING', :]
+    x = data_sp['DAY']
+    y = data_sp['Phenology_Stage']
+    res_sp = linregress(x, y)
+
+    data_fa = data.loc[data['SEASON'] == 'FALL', :]
+    x = data_fa['DAY']
+    y = data_fa['Phenology_Stage']
+    res_fa = linregress(x, y)
+
+    return (res_sp.slope, res_sp.intercept, res_sp.stderr), (res_fa.slope, res_fa.intercept, res_fa.stderr)
 
 
 def read_snowcourse():
