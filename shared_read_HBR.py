@@ -77,9 +77,8 @@ def read_lysimeter():
     #
     # The Bs horizon is for Sites 1-7 & 10 & 12; The Bs2 horizon is for Sites 8-9
     data['Horizon'] = data['Horizon'].map({
-        'Oa': 'Oae', 'Oe': 'Oae', 'Oae': 'Oae', 
-        'Bh': 'Bhs', 'Bhs': 'Bhs', 'Bhs1': 'Bhs', 'Bhs3': 'Bhs', 
-        'Bs': 'Bhs', 'Bs2': 'Bhs'
+        'Oa': 'Oa', 'Oe': 'Oe', 'Oae': 'Oa', 
+        'Bh': 'B', 'Bhs': 'B', 'Bhs1': 'B', 'Bhs3': 'B', 'Bs': 'B', 'Bs2': 'B'
     })
 
     data = data.set_index(['Horizon', 'Site', 'Date'])
