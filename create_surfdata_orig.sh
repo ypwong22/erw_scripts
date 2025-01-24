@@ -23,5 +23,13 @@ reorder_longxy() {
   rm ${temp_flipped} ${temp_with_coord} ${temp_reordered}
 }
 
-reorder_longxy landuse.timeseries_0.5x0.5_hist_simyr1850-2015_c240308.nc landuse.timeseries_0.5x0.5_hist_simyr1850-2015_c240308_newlon.nc
+# concatenate the historical and SSP585 file
+# (note the last and first years are both 2015)
+ncks -d time,1, landuse.timeseries_0.5x0.5_ssp5_rcp85_simyr2015-2100_c240408.nc trimmed_second.nc
+ncrcat landuse.timeseries_0.5x0.5_hist_simyr1850-2015_c240308.nc \
+       trimmed_second.nc \
+       -o landuse.timeseries_0.5x0.5_combined_simyr1850-2100_c240508.nc
+rm trimmed_second.nc
+
+reorder_longxy landuse.timeseries_0.5x0.5_combined_simyr1850-2100_c240508.nc landuse.timeseries_0.5x0.5_combined_simyr1850-2100_c240508_newlon.nc
 reorder_longxy surfdata_0.5x0.5_simyr1850_c240308.nc surfdata_0.5x0.5_simyr1850_c240308_newlon.nc
