@@ -63,21 +63,26 @@ np.savetxt(os.path.join(path_root, 'erw_ensemble_record.txt'), np.array(tuples))
 skip = True
 if not skip:
     file_orig = os.path.join(path_root, 
-                             'landuse.timeseries_0.5x0.5_combined_simyr1850-2100_c240508_newlon.nc')
+                             'landuse.conus_erw_off_combined_simyr1850-2100_c240508_newlon.nc')
     for count in range(len(tuples) - 1):
-        file_dest = os.path.join(path_root, 'erw_ensemble', f'landuse.timeseries_conus_erw_on_combined_simyr1850-2100_c240508_ensemble_{count}.nc')
+        file_dest = os.path.join(path_root, 'erw_ensemble', f'landuse.conus_erw_on_combined_simyr1850-2100_c240508_ensemble_{count}.nc')
         os.system(f"cp {file_orig} {file_dest}")
 
 ###########
 # Loop to create netcdf files
-# REPLACE is 1-190
+# REPLACE is 1-23
 ###########
-for count, (gra, app, tup_count) in enumerate(it.product(grain_size, app_rate, 
-                                                         range(len(app_occ_tuples)))):
-    if (count < ((REPLACE-1)*12)) | (count >= (REPLACE*12)):
+range_list = list( it.product(grain_size, app_rate, range(len(app_occ_tuples))) )
+range_list = [(1, 0, -1)] + range_list
+for count, (gra, app, tup_count) in enumerate(range_list):
+    #if (count < ((REPLACE-1)*100)) | (count >= (REPLACE*100)):
+    #    continue
+    if count < (len(range_list) - 1):
         continue
 
-    file_dest = os.path.join(path_root, 'erw_ensemble', f'landuse.timeseries_conus_erw_on_combined_simyr1850-2100_c240508_ensemble_{count}.nc')
+    print(f'number {count}')
+
+    file_dest = os.path.join(path_root, 'erw_ensemble', f'landuse.conus_erw_on_combined_simyr1850-2100_c240508_ensemble_{count}.nc')
 
     # Please make sure each time step has valid values, because the streamfile reader
     # is updating every year!
@@ -85,10 +90,10 @@ for count, (gra, app, tup_count) in enumerate(it.product(grain_size, app_rate,
     ds = Dataset(file_dest, 'a')
 
     ds.createDimension('namendspec', namendspec)
-    namendspec = ds.createVariable('namendspec', datatype = 'i2', dimensions = ('namendspec',))
-    namendspec.long_name = 'indices of species in soil amendment mixture (e.g. rock powder)'
-    namendspec.units = 'index'
-    namendspec[:] = range(1, namendspec + 1)
+    amendspec = ds.createVariable('namendspec', datatype = 'i2', dimensions = ('namendspec',))
+    amendspec.long_name = 'indices of species in soil amendment mixture (e.g. rock powder)'
+    amendspec.units = 'index'
+    amendspec[:] = range(1, namendspec + 1)
 
     ds.createDimension('mpft', mpft)
     mpft_data = ds.createVariable('mpft', datatype = 'i2', dimensions = ('mpft',))
@@ -115,7 +120,8 @@ for count, (gra, app, tup_count) in enumerate(it.product(grain_size, app_rate,
     rate.long_name = 'soil amendment application rate'
     rate.units = 'kg/m2/yr'
     rate[:,:,:,:] = 0.
-    rate[app_occurrence[tup_count, :], :, :, :] = app
+    if tup_count > -1:
+        rate[app_occurrence[tup_count, :], :, :, :] = app
 
     ds.sync()
     print('SOIL_AMENDMENTS_RATE created')
@@ -125,7 +131,7 @@ for count, (gra, app, tup_count) in enumerate(it.product(grain_size, app_rate,
                             fill_value = 1e20)
     size.long_name = 'grain size of applied soil amendment'
     size.units = 'micrometer'
-    size[:,:,:,:] = gra
+    size[:,:,:] = gra
 
     ds.sync()
     print('SOIL_AMENDMENTS_GRAINSIZE created')
