@@ -1,4 +1,4 @@
-""" Create surfdata for ISIMIP-driven ensemble simulation """
+""" Create surfdata for JRA55-driven historical simulation """
 import os
 import numpy as np
 import pandas as pd
@@ -10,12 +10,12 @@ from netCDF4 import Dataset
 ###########
 path_root = os.path.join(os.environ['E3SM_ROOT'], 'inputdata', 'lnd', 'clm2','surfdata_map')
 
-# Grain sizes: 10-1000 um
-# Application rates: 20-100 t/ha => 2-10 kg/m2
+# Grain sizes: 100 um
+# Application rates: 40 t/ha
 # Day of year: Jan 1 # 244 (Sep-1 in nonleap years)
 mpft = 17
-planning_start = 2025
-planning_end = 2050
+planning_start = 1993
+planning_end = 2022
 day_of_application = 1 # 244
 namendspec = 10
 
@@ -29,10 +29,10 @@ pct_basalt = np.array([0, 12, 0, 0, 0, 0, 43, 21, 6, 0])
 # pct_basalt = np.array([0, 0, 0, 0, 0, 0, 45, 34, 5, 3])
 
 # tuples = list(it.product(np.linspace(10, 1000, 10), np.linspace(2, 10, 10)))
-grain_size = [2, 10, 20, 50, 100]
-app_rate = [2, 4, 6, 8, 10]
+grain_size = [10]
+app_rate = [4]
 app_freq = [1,3,9,999]
-start_year = np.arange(planning_start, planning_end + 1)
+start_year = [1993]
 
 ###########
 # Create a giant array that use 1/0 to indicate rock powder applied/not applied
@@ -56,18 +56,17 @@ app_occ_tuples = app_occ_tuples[indices, :]
 tuples = [(1,0,-1,-1)]
 for gra, app, tup in it.product(grain_size, app_rate, app_occ_tuples):
     tuples.append([gra, app, tup[0], tup[1]])
-np.savetxt(os.path.join(path_root, 'erw_ensemble_record.txt'), np.array(tuples))
-
+np.savetxt(os.path.join(path_root, 'erw_ensemble_record_JRA55.txt'), np.array(tuples))
 
 ###########
 # Create the "base" files by copying from non-ERW file
 ###########
-skip = True
+skip = False
 if not skip:
     file_orig = os.path.join(path_root, 
                              'landuse.conus_erw_off_combined_simyr1850-2100_c240508_newlon.nc')
     for count in range(len(tuples)):
-        file_dest = os.path.join(path_root, 'erw_ensemble', f'landuse.conus_erw_on_combined_simyr1850-2100_c240508_ensemble_{count}.nc')
+        file_dest = os.path.join(path_root, 'erw_ensemble_JRA55', f'landuse.conus_erw_on_combined_simyr1850-2100_c240508_ensemble_{count}.nc')
         os.system(f"cp {file_orig} {file_dest}")
 
 ###########
@@ -79,12 +78,10 @@ range_list = [(1, 0, -1)] + range_list
 for count, (gra, app, tup_count) in enumerate(range_list):
     #if (count < ((REPLACE-1)*100)) | (count >= (REPLACE*100)):
     #    continue
-    #if count < (len(range_list) - 1):
-    #    continue
 
     print(f'number {count}')
 
-    file_dest = os.path.join(path_root, 'erw_ensemble', f'landuse.conus_erw_on_combined_simyr1850-2100_c240508_ensemble_{count}.nc')
+    file_dest = os.path.join(path_root, 'erw_ensemble_JRA55', f'landuse.conus_erw_on_combined_simyr1850-2100_c240508_ensemble_{count}.nc')
 
     # Please make sure each time step has valid values, because the streamfile reader
     # is updating every year!
