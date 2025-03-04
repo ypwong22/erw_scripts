@@ -8,4 +8,4 @@
 
 cd ${HOME}/Git/erw_scripts
 source activate myCondaEnv
-python temp_create_surfdata_dynpft_CONUS_REPLACE.py
+python temp_create_surfdata_dynpft_CONUS_ISIMIP_REPLACE.py
