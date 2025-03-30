@@ -48,7 +48,7 @@ ds = xr.Dataset({
     'minerals_name': ('nminerals', np.array(minerals_name, dtype=f'S{string_length}')),
     'minsecs_name': ('nminsecs', np.array(minsecs_name, dtype=f'S{string_length}')),
     'cations_name': ('ncations', np.array(cations_name, dtype=f'S{string_length}')),
-    'log_keq_primary': ('nminerals', np.array([13.7605, 27.8626, 2.7645, 26.578, 32.9296, 
+    'log_keq_primary': ('nminerals', np.array([13.7605, 27.8626, 2.7645, 26.578, 32.9296,
                                                1.8487, 61.2367, 67.2391, -0.2753, 11.3269])),
     'log_k_primary': (('nks', 'nminerals'), np.array([
         [ -5.37,  -6.85, -10.16,  -3.5,  -10.6,   -0.3,  -8.40, -11.11, -10.06,  -9.02], # acid
