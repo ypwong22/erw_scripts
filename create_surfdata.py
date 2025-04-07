@@ -11,6 +11,7 @@ path_root = os.path.join(os.environ['E3SM_ROOT'], 'inputdata', 'lnd', 'clm2', 'P
 #    'HBR_1': {'CEC_TOT': 7, 'CEC_EFF': 7, 'CEC_ACID': 1}
 #}
 
+"""
 ################################################################################################
 # Interpolated NCSS - extracted from global data and modified
 for site in ['UC_Davis']: 
@@ -24,8 +25,8 @@ for site in ['UC_Davis']:
         nc.variables['SOIL_PH'][:] = 6.95 * np.ones(10)
 
     nc.close()
-
 """
+
 ################################################################################################
 # Hubbard Brook observation
 elm_input = pd.read_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 
@@ -154,9 +155,80 @@ hr['FMAX'] = xr.DataArray(
              'units': 'unitless'}
 )
 
+# 
+hr['SINSL_COSAS'] = xr.DataArray(
+    [[0.09012882]],
+    dims=['lsmlat', 'lsmlon'],
+    attrs={
+        'long_name': 'sin(slope) * cos(aspect)',
+        'units': 'unitless'
+    }
+)
 
-hr.to_netcdf(path_surffdata.replace('.nc', '_erw.nc'))
+hr['SINSL_SINAS'] = xr.DataArray(
+    [[-0.59361121]],
+    dims=['lsmlat', 'lsmlon'],
+    attrs={
+        'long_name': 'sin(slope) * sin(aspect)',
+        'units': 'unitless'
+    }
+)
+
+hr['SKY_VIEW'] = xr.DataArray(
+    [[0.999356244778633]],
+    dims=['lsmlat', 'lsmlon'],
+    attrs={
+        'long_name': 'sky view factor',
+        'units': 'unitless'
+    }
+)
+
+hr['STDEV_ELEV'] = xr.DataArray(
+    [[72.226845371136]],
+    dims=['lsmlat', 'lsmlon'],
+    attrs={
+        'long_name': 'standard deviation of elevation',
+        'units': 'm'
+    }
+)
+
+hr['TERRAIN_CONFIG'] = xr.DataArray(
+    [[0.00256595338379266]],
+    dims=['lsmlat', 'lsmlon'],
+    attrs={
+        'long_name': 'terrain configuration factor',
+        'units': 'unitless'
+    }
+)
+
+hr['TOPO'] = xr.DataArray(
+    [[739.49707]],
+    dims=['lsmlat','lsmlon'],
+    attrs={
+        'long_name': 'mean elevation on land', 
+        'units': 'm'
+    }
+)
+
+hr['STD_ELEV'] = xr.DataArray(
+    [[72.226845371136]],
+    dims=['lsmlat','lsmlon'],
+    attrs={
+        'long_name': 'standard deviation of elevation',
+        'units': 'm'
+    }
+)
+
+# test decreasing soil albedo
+hr['SOIL_COLOR'] = xr.DataArray(
+    [[19]], 
+    dims = ['lsmlat', 'lsmlon'],
+    attrs = {'long_name': 'soil color', 
+             'units': 'unitless'}
+)
+
+
+hr.to_netcdf(path_surffdata.replace('.nc', '_erw_TOP_test.nc'))
 hr.close()
 
 os.system(f'rm {path_surffdata}_temp')
-"""

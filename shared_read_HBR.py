@@ -143,3 +143,13 @@ def read_cec():
     data_mean = data.groupby(['Horizon', 'Year']).mean()
     data_std = data.groupby(['Horizon', 'Year']).std()
     return data_mean, data_std
+
+def read_tsoi():
+    data = pd.read_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 'data', 
+                                    'Hubbard_Brook', 'knb-lter-hbr.315.2',
+                                    'hbr315_snowgrad.soilT.csv'),
+                       index_col = 0, parse_dates = True)
+    data = data[['E10_soilT_1', 'E10_soilT_2']]
+
+    # the second is the uncertainty between the two sensors
+    return data
