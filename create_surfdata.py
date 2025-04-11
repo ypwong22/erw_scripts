@@ -149,7 +149,7 @@ hr['F0'] = xr.DataArray(
 )
 
 hr['FMAX'] = xr.DataArray(
-    [[0.73]], 
+    [[0.33]], 
     dims = ['lsmlat', 'lsmlon'],
     attrs = {'long_name': 'maximum fractional saturated area', 
              'units': 'unitless'}
@@ -228,7 +228,7 @@ hr['SOIL_COLOR'] = xr.DataArray(
 )
 
 
-hr.to_netcdf(path_surffdata.replace('.nc', '_erw_TOP_test.nc'))
+hr.to_netcdf(path_surffdata.replace('.nc', '_erw_TOP_test2.nc'))
 hr.close()
 
 os.system(f'rm {path_surffdata}_temp')
