@@ -721,7 +721,7 @@ def test():
     OFF_QADV   = False
     OFF_OUTF   = False
     NO_QSRC    = True
-    UNI_VWC    = True
+    UNI_VWC    = False
     
     # solute diffusion + reactions
     UNI_CONC   = False
