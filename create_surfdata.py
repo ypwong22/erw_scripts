@@ -148,6 +148,8 @@ hr['F0'] = xr.DataArray(
              'units': 'unitless'}
 )
 
+# TOP_test2.nc: FMAX + SOIL COLOR
+# TOP_test3.nc: FMAX only
 hr['FMAX'] = xr.DataArray(
     [[0.33]], 
     dims = ['lsmlat', 'lsmlon'],
@@ -219,16 +221,16 @@ hr['STD_ELEV'] = xr.DataArray(
     }
 )
 
-# test decreasing soil albedo
-hr['SOIL_COLOR'] = xr.DataArray(
+# TOP_test.nc : decrease soil albedo, not useful
+"""hr['SOIL_COLOR'] = xr.DataArray(
     [[19]], 
     dims = ['lsmlat', 'lsmlon'],
     attrs = {'long_name': 'soil color', 
              'units': 'unitless'}
-)
+)"""
 
 
-hr.to_netcdf(path_surffdata.replace('.nc', '_erw_TOP_test2.nc'))
+hr.to_netcdf(path_surffdata.replace('.nc', '_erw_TOP_test3.nc'))
 hr.close()
 
 os.system(f'rm {path_surffdata}_temp')

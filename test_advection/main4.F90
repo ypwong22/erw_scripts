@@ -1,4 +1,4 @@
-! gfortran main.F90 -I /sw/baseline/spack-envs/base/opt/linux-rhel8-zen3/gcc-12.2.0/openblas-0.3.23-ejxcjjxiy43ruq6kjat43xptaqscotvn/include/ -L /sw/baseline/spack-envs/base/opt/linux-rhel8-zen3/gcc-12.2.0/openblas-0.3.23-ejxcjjxiy43ruq6kjat43xptaqscotvn/lib/ -lopenblas
+! gfortran main4.F90 -I /sw/baseline/spack-envs/base/opt/linux-rhel8-zen3/gcc-12.2.0/openblas-0.3.23-ejxcjjxiy43ruq6kjat43xptaqscotvn/include/ -L /sw/baseline/spack-envs/base/opt/linux-rhel8-zen3/gcc-12.2.0/openblas-0.3.23-ejxcjjxiy43ruq6kjat43xptaqscotvn/lib/ -lopenblas
 
 module global_parameters
     use, intrinsic :: iso_fortran_env, only : r8 => real64
@@ -392,10 +392,10 @@ contains
 
                     ! add the fluxes during (dt', dt) (drop one side of diffusion)
                     dc_up(i) = dc_up(i) &
-                        + i1_keep*i1*Deff(i)/dx(i) * (c_int_p - cmax*(dt-dt_p)) &
+                        + i1_keep*i1*Deff(i)/dx(i) * (c_int_p - c_prev(i-1)*(dt-dt_p)) &
                         + i3*abs(q_int(i))*c_int_p
                     dc_down(i) = dc_down(i) &
-                        + i2_keep*i2*Deff(i)/dx(i+1) * (c_int_p - cmax*(dt-dt_p)) &
+                        + i2_keep*i2*Deff(i)/dx(i+1) * (c_int_p - c_prev(i+1)*(dt-dt_p)) &
                         + i4*q_int(i+1)*c_int_p
 
                     ! final value at dt
@@ -413,10 +413,10 @@ contains
 
                     ! add the fluxes during [dt', dt"] (drop one side of diffusion)
                     dc_up(i) = dc_up(i) &
-                        + i1_keep*i1*Deff(i)/dx(i) * (c_int_pp - cmin*(dt_pp-dt_p)) &
+                        + i1_keep*i1*Deff(i)/dx(i) * (c_int_pp - c_prev(i-1)*(dt_pp-dt_p)) &
                         + i3*abs(q_int(i))*c_int_pp
                     dc_down(i) = dc_down(i) &
-                        + i2_keep*i2*Deff(i)/dx(i+1) * (c_int_pp - cmin*(dt_pp-dt_p)) &
+                        + i2_keep*i2*Deff(i)/dx(i+1) * (c_int_pp - c_prev(i+1)*(dt_pp-dt_p)) &
                         + i4*q_int(i+1)*c_int_pp
 
                     ! update the k & r (drop all diffusion)
