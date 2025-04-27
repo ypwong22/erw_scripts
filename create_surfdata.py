@@ -231,8 +231,17 @@ hr['STD_ELEV'] = xr.DataArray(
              'units': 'unitless'}
 )"""
 
+fix = {}
+for v in hr.variables:
+    if hr[v].dtype == np.int64:        # NetCDF-3 has no int64
+        hr[v] = hr[v].astype(np.int32)
+    if hr[v].dtype == bool:            # NetCDF-3 has no bool
+        hr[v] = hr[v].astype(np.int8)
+    # ensure _FillValue type matches variable type
+    if '_FillValue' in hr[v].attrs:
+        hr[v].encoding["_FillValue"] = hr[v].attrs["_FillValue"].astype(hr[v].dtype)
 
-hr.to_netcdf(path_surffdata.replace('.nc', '_erw_TOP_FMAX_UP.nc'))
+hr.to_netcdf(path_surffdata.replace('.nc', '_erw_TOP_FMAX_UP.nc'), format='NETCDF3_CLASSIC')
 hr.close()
 
 os.system(f'rm {path_surffdata}_temp')
