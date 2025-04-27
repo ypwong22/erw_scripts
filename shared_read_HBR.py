@@ -137,9 +137,11 @@ def read_cec():
                                     'Hubbard_Brook', 'knb-lter-hbr.158.1',
                                     'w1ffexchem.txt'), sep = ",")
     data['Horizon'] = data['Horizon'].map({'min': 'min', 'Oie': 'Oie', 'Oa': 'Oa', 
-                                        'min': 'Min', 'cor': 'Min'})
-    data = data.set_index(['Horizon', 'Year', 'Plot'])[['ExAcidcmolc_kg', 'ExCacmolc_kg', 'ExMgcmolc_kg', 'ExNacmolc_kg', 'ExKcmolc_kg', 'ExAlcmolc_kg']]
+                                           'min': 'Min', 'cor': 'Min'})
+    data = data.set_index(['Horizon', 'Year', 'Plot'])[['ExAcidcmolc_kg', 'ExCacmolc_kg', 'ExMgcmolc_kg', 'ExNacmolc_kg', 'ExKcmolc_kg', 'ExAlcmolc_kg']].sort_index()
     data[data < 0] = np.nan
+    # subtract the Al3+ from Acid exchange to get the H+
+    data['ExAcidcmolc_kg'] = data['ExAcidcmolc_kg'] - data['ExAlcmolc_kg'].values
     data_mean = data.groupby(['Horizon', 'Year']).mean()
     data_std = data.groupby(['Horizon', 'Year']).std()
     return data_mean, data_std
