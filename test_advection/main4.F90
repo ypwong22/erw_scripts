@@ -321,12 +321,12 @@ contains
                 cmax = c_prev(i+1) ! diffuse down
                 cmin = 0._r8
                 i1_keep = 0
-                i2_keep = 1
+                i2_keep = 0
 
             else if (i2 == 0) then
                 cmax = c_prev(i-1) ! diffuse up
                 cmin = 0._r8
-                i1_keep = 1
+                i1_keep = 0
                 i2_keep = 0
 
             else

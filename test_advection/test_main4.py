@@ -274,7 +274,7 @@ def a_step_explicit(nlevsoi, z, dz, c_prev, \
                     cmax = c_prev[i+1] # diffuse down
                     cmin = 0
                     i1_keep = 0
-                    i2_keep = 1
+                    i2_keep = 0
 
                 elif (i2 == 0):
                     cmax = c_prev[i-1] # diffuse up
