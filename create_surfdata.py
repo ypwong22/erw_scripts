@@ -150,7 +150,7 @@ hr['F0'] = xr.DataArray(
 
 # TOP.nc: FMAX=0.73
 # TOP_test2.nc: FMAX=0.33 + SOIL COLOR
-# TOP_FMAX.nc: FMAX=0.33
+# TOP_FMAX_LOW.nc: FMAX=0.33
 # TOP_FMAX_UP.nc: FMAX=0.93
 hr['FMAX'] = xr.DataArray(
     [[0.93]], 

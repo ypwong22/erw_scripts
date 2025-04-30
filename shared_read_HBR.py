@@ -42,8 +42,15 @@ def read_snowcourse():
     data = pd.read_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 'data', 
                                     'Hubbard_Brook', 'knb-lter-hbr.27.20',
                                     'HBEF_snowcourse_1956-2024.csv'),
-                       index_col = [2, 1], parse_dates=True)
-    data = data.loc['STA2', 'swe']
+                        index_col = [2, 1], parse_dates=True)
+    data = data.loc[['STA2','STA9','STA17','STA19','STAHQ'], 'swe']
+    data[data < 0] = np.nan
+    data = data.loc[~data.index.duplicated(keep='first')]
+    data = data.unstack().T['STA2'].sort_index()
+    data = data.loc[data.index.year >= 2012]
+    data = data.reindex(pd.date_range('2012-01-01','2024-04-10'))
+    # linearly interpolate missing values
+    data = data.interpolate(method = 'linear', limit = 14)
     return data
 
 
