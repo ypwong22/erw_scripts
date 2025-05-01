@@ -162,3 +162,56 @@ def read_tsoi():
 
     # the second is the uncertainty between the two sensors
     return data
+
+
+def read_solar_scan():
+    """ Read the solar radiation data at the SCAN site """
+    data_all = []
+    for year in range(2012,2024):
+        data = pd.read_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 'data', 
+                                        'Hubbard_Brook', 'SCAN',
+                                        f'2069_SOLAR_YEAR={year}.csv'),
+                           skiprows = 6)
+        data.index = pd.DatetimeIndex(data['Date'] + ' ' + data['Time'])
+        data = data.loc[:,  'SRADV.H-1 (watt) ']
+        data_all.append(data)
+    data_all = pd.concat(data_all)
+    return data_all
+
+def read_solar():
+    solrad = pd.read_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 'data', 
+                                      'Hubbard_Brook', 'knb-lter-hbr.237.1', 'HBEF_15minSolarRadiation_WX1.csv'))
+
+    start_date = pd.Timestamp(year = 2014, month = 7, day = 21, hour = 10, minute = 30)
+    end_date = pd.Timestamp(year = 2019, month = 4, day = 3, hour = 10, minute = 30)
+    date_range = pd.date_range(start_date, end_date, freq='15T')
+
+    solrad.index = date_range
+
+    # average over two stations
+    solrad = (solrad['SolRad1'] + solrad['SolRad2']) / 2
+    solrad = solrad.resample('1H').mean()
+    return solrad
+
+def read_solar_daily():
+    """ Solar radiation: Mj m-2 day-1 => W m-2 long-term daily """ 
+    solrad_daily = pd.read_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 'data', 
+                                            'Hubbard_Brook', 'knb-lter-hbr.60.13', 
+                                            'HBEF_DailySolarRadiation_HQ.csv'),
+                               index_col = 0, parse_dates=True)['solar_rad']
+    solrad_daily = solrad_daily.loc[solrad_daily.index.year >= 2012] * 277.78 / 24
+    return solrad_daily
+
+def read_era5(variable):
+    filelist = [os.path.join(os.environ['PROJDIR'], "ERW_LDRD", "data", "GEE", "HubbardBrook", 
+                             f"HubbardBrook_{variable}_{year}.csv") \
+                for year in range(2011, 2024)]
+    alldata = []
+    for file in filelist:
+        alldata = alldata + [pd.read_csv(file, index_col = 0, parse_dates=True)[variable]]
+    alldata = pd.concat(alldata)
+    if variable == "temperature_2m":
+        alldata = alldata - 273.15
+    if "radiation" in variable:
+        alldata = alldata / 3600
+    return alldata
