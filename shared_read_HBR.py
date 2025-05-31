@@ -127,11 +127,15 @@ def read_streamChem():
     data.columns = ['pH', 'Ca2+', 'Mg2+', 'Na+', 'K+', 'Al3+']
     data.iloc[:, 1:] = data.iloc[:, 1:].values * 1e-6
 
+    # remove two outliers
+    data.loc[data['Na+'] > 0.00015, 'Na+'] = np.nan
+    data.loc[data['K+'] > 0.00005, 'K+'] = np.nan
+
     # average over all the sites in a watershed
-    data = data.groupby(data.index.get_level_values(0)).mean()
+    data_mean = data.groupby(data.index.get_level_values(0)).mean()
     data_std = data.groupby(data.index.get_level_values(0)).std()
 
-    return data, data_std
+    return data_mean, data_std
 
 
 def read_runoff():
