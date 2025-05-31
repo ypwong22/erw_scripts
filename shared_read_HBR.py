@@ -106,27 +106,32 @@ def read_streamChem():
     """
     Stream chemistry (umol/L) measured on individual dates at monthly intervals
     """
+
     data = pd.read_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 'data', 
                                     'Hubbard_Brook', 'knb-lter-hbr.156.8', 'W1Long_StrmChem_HB1991-2020.csv'),
-                       index_col = [0, 2], parse_dates=True)
-    data = data[['pH','Ca2', 'Mg2', 'Na', 'K', 'Alt']].sort_index() # 'Elevation',
+                        index_col = [0, 2], parse_dates=True)
+    data = data[['Elevation','pH','Ca2', 'Mg2', 'Na', 'K', 'Alt']].sort_index()
     data[data < -800] = np.nan
 
-    # some sites have measurements at two elevations, average them
-    duplicate_sites = data.index[data.index.to_frame().reset_index(drop = True).duplicated()]
+    # merge sites 4a 4b 4c into a single site
+    data = data.reset_index()
+    data['Site'] = data['Site'].map({'1': '1', '2': '2', '2.5': '2.5', 
+                                    '3': '3', '4a': '4', '4b': '4', '4c': '4'})
 
-    temp = data.loc[duplicate_sites, :]
-    temp = temp.groupby(temp.index).mean()
-    temp.index = pd.MultiIndex.from_tuples(temp.index, names = ['Site', 'Date'])
-    data.loc[temp.index, :] = temp
+    # remove occasional entries that are measured at same site, slightly different elevations
+    data = data.groupby(['Date','Site']).mean()
 
-    data = data.drop_duplicates()
+    data.drop('Elevation', axis = 1, inplace = True)
+
+    # umol/L => mol/L
+    data.columns = ['pH', 'Ca2+', 'Mg2+', 'Na+', 'K+', 'Al3+']
+    data.iloc[:, 1:] = data.iloc[:, 1:].values * 1e-6
 
     # average over all the sites in a watershed
     data = data.groupby(data.index.get_level_values(0)).mean()
     data_std = data.groupby(data.index.get_level_values(0)).std()
 
-    return data
+    return data, data_std
 
 
 def read_runoff():
@@ -152,6 +157,7 @@ def read_cec():
     data_mean = data.groupby(['Horizon', 'Year']).mean()
     data_std = data.groupby(['Horizon', 'Year']).std()
     return data_mean, data_std
+
 
 def read_tsoi():
     data = pd.read_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 'data', 
