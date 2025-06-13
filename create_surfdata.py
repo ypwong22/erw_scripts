@@ -27,12 +27,13 @@ for site in ['UC_Davis']:
     nc.close()
 """
 
+"""
 ################################################################################################
 # Hubbard Brook observation
-elm_input = pd.read_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 
+elm_input = pd.read_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD',
                                      'results', 'HBR_elm_input.csv'), index_col = 0)
-logkm = pd.read_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 
-                                     'results', 'HBR_logkm.csv'), index_col = 0)
+logkm = pd.read_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD',
+                                 'results', 'HBR_logkm.csv'), index_col = 0)
 
 
 path_surffdata = os.path.join(path_root, 'HBR', 'surfdata.nc')
@@ -151,7 +152,7 @@ hr['F0'] = xr.DataArray(
 # TOP.nc: FMAX=0.73
 # TOP_test2.nc: FMAX=0.33 + SOIL COLOR
 # TOP_FMAX_LOW.nc: FMAX=0.33
-# TOP_FMAX_UP.nc: FMAX=0.93
+# TOP_FMAX_UP.nc: FMAX=0.93, preferred
 hr['FMAX'] = xr.DataArray(
     [[0.93]], 
     dims = ['lsmlat', 'lsmlon'],
@@ -224,12 +225,12 @@ hr['STD_ELEV'] = xr.DataArray(
 )
 
 # TOP_test.nc : decrease soil albedo, not useful
-"""hr['SOIL_COLOR'] = xr.DataArray(
-    [[19]], 
-    dims = ['lsmlat', 'lsmlon'],
-    attrs = {'long_name': 'soil color', 
-             'units': 'unitless'}
-)"""
+##hr['SOIL_COLOR'] = xr.DataArray(
+##    [[19]], 
+##    dims = ['lsmlat', 'lsmlon'],
+##    attrs = {'long_name': 'soil color', 
+##             'units': 'unitless'}
+##)
 
 fix = {}
 for v in hr.variables:
@@ -245,3 +246,56 @@ hr.to_netcdf(path_surffdata.replace('.nc', '_erw_TOP_FMAX_UP.nc'), format='NETCD
 hr.close()
 
 os.system(f'rm {path_surffdata}_temp')
+"""
+
+################################################################################################
+# UIEF
+# 
+# Table 1 in
+# Namoi, N., Lin, C.-H., Jang, C., Wasonga, D., Zumpf, C., Arshad, M. U., et al. (2025). Field-scale evaluation of ecosystem service benefits of bioenergy switchgrass. Journal of Environmental Quality, 54(3), 576–589. https://doi.org/10.1002/jeq2.70025
+path_surffdata = os.path.join(path_root, 'UIEF', 'surfdata_erw.nc')
+os.system(f'cp {path_surffdata} {path_surffdata}_obs')
+nc = Dataset(f'{path_surffdata}_obs', 'r+')
+
+nc['SOIL_PH'][:3,0,0] = 6.11
+nc['SOIL_PH'][3,0,0] = 6.13
+nc['SOIL_PH'][4,0,0] = 6.34
+nc['SOIL_PH'][5,0,0] = 6.63
+nc['SOIL_PH'][6,0,0] = 6.86
+
+nc['CEC_TOT'][:3,0,0] = 13.3
+nc['CEC_TOT'][3,0,0] = 14.1
+nc['CEC_TOT'][4,0,0] = 14.7
+nc['CEC_TOT'][5,0,0] = 15.6
+nc['CEC_TOT'][6,0,0] = 14.5
+
+# organic matter content is okay compared to observed
+
+nc['CEC_ACID'][:3,0,0] = 0.2 * 13.3
+nc['CEC_ACID'][3:5,0,0] = 0.175 * 13.3
+
+# scale down the CEC_EFF proportionally
+factor = np.empty(10)
+factor[:5] = (nc['CEC_TOT'][:5,0,0] - nc['CEC_ACID'][:5,0,0]) / \
+             (nc['CEC_EFF_1'][:5,0,0] + nc['CEC_EFF_2'][:5,0,0] + \
+              nc['CEC_EFF_3'][:5,0,0] + nc['CEC_EFF_4'][:5,0,0] + \
+              nc['CEC_EFF_5'][:5,0,0])
+factor[5:7] = nc['CEC_TOT'][5:7,0,0] / \
+    (nc['CEC_ACID'][5:7,0,0] + nc['CEC_EFF_1'][5:7,0,0] + \
+     nc['CEC_EFF_2'][5:7,0,0] + nc['CEC_EFF_3'][5:7,0,0] + \
+     nc['CEC_EFF_4'][5:7,0,0] + nc['CEC_EFF_5'][5:7,0,0])
+for i in range(1,6):
+    for j in range(7):
+        nc[f'CEC_EFF_{i}'][j,0,0] *= factor[j]
+for j in range(5,7):
+    nc['CEC_ACID'][j,0,0] *= factor[j]
+
+# rescale for all the layers to account for small differences
+delta = nc['CEC_TOT'][:,0,0] - \
+        (nc['CEC_ACID'][:,0,0] + nc['CEC_EFF_1'][:,0,0] + nc['CEC_EFF_2'][:,0,0] + \
+          nc['CEC_EFF_3'][:,0,0] + nc['CEC_EFF_4'][:,0,0] + nc['CEC_EFF_5'][:,0,0])
+nc['CEC_ACID'][:,0,0] += delta
+
+nc.sync()
+
+nc.close()

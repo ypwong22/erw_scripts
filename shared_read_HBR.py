@@ -106,7 +106,6 @@ def read_streamChem():
     """
     Stream chemistry (umol/L) measured on individual dates at monthly intervals
     """
-
     data = pd.read_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 'data', 
                                     'Hubbard_Brook', 'knb-lter-hbr.156.8', 'W1Long_StrmChem_HB1991-2020.csv'),
                         index_col = [0, 2], parse_dates=True)
