@@ -3,7 +3,11 @@ from qgis.analysis import QgsRasterCalculator, QgsRasterCalculatorEntry
 import processing
 import os
 
-varname = 'Kaolinit'
+varname = 'Gibbsite'
+
+# switch directory to script directory
+script_dir = os.path.dirname(os.path.abspath(__file__))
+os.chdir(script_dir)
 
 input_raster_path = os.path.join(os.getcwd(), f'RF_{varname}.tif')
 output_path = os.path.join(os.getcwd())

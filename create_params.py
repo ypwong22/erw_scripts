@@ -31,7 +31,7 @@ import shutil
 #    6.83% serpentine, not considered
 ########################################################################################
 nminerals = 10
-nminsec = 2
+nminsec = 3
 ncations = 5
 nks = 3
 string_length = 40
@@ -41,7 +41,7 @@ minerals_name = ['Wollastonite_CaSiO3', 'Forsterite_Mg2SiO4', 'Albite_NaAlSi3O8'
                  'Anorthite_CaAl2Si2O8', 'Epidote_Ca2FeAl2(SiO4)3(OH)', 'Calcite_CaCO3',
                  'Labradorite_Ca0.6Na0.4Al1.6Si2.4O8', 'Augite_Ca0.9Mg0.9Na0.1Al0.4Fe0.2Si1.9O6',
                  'Kfeldspar_KAlSi3O8', 'Enstatite_MgSiO3']
-minsecs_name = ['Calcite_CaCO3', 'Kaolinite_Al2Si2O5(OH)4']
+minsecs_name = ['Calcite_CaCO3', 'Kaolinite_Al2Si2O5(OH)4', 'Gibbsite_Al(OH)3']
 cations_name = ['Ca2+', 'Mg2+', 'Na+', 'K+', 'Al3+']
 
 # Fill arrays with missing values where data is not provided
@@ -60,8 +60,9 @@ fill = -9999
 # --------------------------------------------------------------------------------------
 ds = xr.Dataset({
     'minerals_name': ('nminerals', np.array(minerals_name, dtype=f'S{string_length}')),
-    'minsecs_name': ('nminsecs', np.array(minsecs_name, dtype=f'S{string_length}')),
-    'cations_name': ('ncations', np.array(cations_name, dtype=f'S{string_length}')),
+    'primary_mass': ('nminerals', np.array([116.159, 140.6931,  262.22, 278.21, 483.22, 
+                                            100.0872, 271.937, 236.371, 278.35, 100.4])),
+
     'log_keq_primary': ('nminerals', np.array([13.7605, 27.8626, 2.7645, 26.578, 32.9296, 
                                                1.8487, fill, fill, -0.2753, 11.3269])),
     'log_k_primary': (('nks', 'nminerals'), np.array([
@@ -89,16 +90,39 @@ ds = xr.Dataset({
     'primary_stoi_h2o': ('nminerals', np.array([1, 2, 2, 4, 2, 0, 3.2, 2, 2, 1])),
     'primary_stoi_sio2': ('nminerals', np.array([1, 1, 3, 2, 3, 0, 2.4, 1.9, 3, 1])),
     'primary_stoi_hco3': ('nminerals', np.array([0, 0, 0, 0, 0, 1, 0, 0, 0, 0])),
-    'primary_mass': ('nminerals', np.array([116.159, 140.6931,  262.22, 278.21, 483.22, 
-                                            100.0872, 271.937, 236.371, 278.35, 100.4])),
+    'minsecs_name': ('nminsecs', np.array(minsecs_name, dtype=f'S{string_length}')),
+    'minsecs_mass': ('nminsecs', np.array([100.0872, 258.1604, 78.0036])),
+    'log_keq_minsecs': ('nminsecs', np.array([1.8487, 6.8101, 7.7560])),
+    'ssa_minsecs': ('nminsecs', np.array([0.047, 25, 10])), # specific surface area, m2 g-1
+    'k_precip_minsecs': (('nks','nminsecs'), np.array([ # precipitation rate parameter
+        [fill, fill, fill], # acid
+        [1.8e-7, 5.5e-13, fill], # neutral
+        [1.9e-3, fill, 3.1e-6]])), # OH- for gibbsite and HCO3- for calcite
+    'e_precip_minsecs': (('nks', 'nminsecs'), np.array([
+        [fill, fill, fill], # acid
+        [66, 66, fill], # neutral
+        [67, fill, 0]])), # OH- for gibbsite and HCO3- for calcite
+    'ph2o_precip_minsecs': (('nminsecs'), np.array([0.5, 0.06, fill])),
+    'qh2o_precip_minsecs': (('nminsecs'), np.array([2, 1.68, fill])),
+    'n_precip_minsecs': (('nminsecs'), np.array([1.63, fill, 1.])),
+    'k_dissolv_minsecs': (('nks', 'nminsecs'), np.array([ # dissolution rate parameter
+        [10**(-0.3), 10**(-11.31), 10**(-7.65)], # acid
+        [10**(-5.81), 10**(-13.18), 10**(-11.5)], # neutral
+        [10**(-3.48), 10**(-17.05), 10**(-16.65)]])), # OH- for gibbsite and HCO3- for calcite
+    'e_dissolv_minsecs': (('nks', 'nminsecs'), np.array([
+        [14.4, 65.9, 47.5], # acid
+        [23.5, 22.2, 61.2], # neutral
+        [35.4, 17.9, 80.1]])), # OH- for gibbsite and HCO3- for calcite
+    'n_dissolv_minsecs': (('nks', 'nminsecs'), np.array([
+        [1, 0.777, 0.992], # acid
+        [0, 0, 0], # neutral
+        [1, -0.472, -0.784]])), # OH- for gibbsite and HCO3- for calcite
+    'cations_name': ('ncations', np.array(cations_name, dtype=f'S{string_length}')),
     'cations_mass': ('ncations', np.array([40.078, 24.305, 22.99, 39.0983, 26.98])),
     'cations_diffusivity': ('ncations', np.array([0.793e-9, 0.705e-9, 1.33e-9, 1.96e-9, 0.559e-9])),
     'bicarbonate_diffusivity': np.array([1.180e-9]),
     'carbonate_diffusivity': np.array([0.955e-9]),
-    'cations_valence': ('ncations', np.array([2, 2, 1, 1, 3])),
-    'minsecs_mass': ('nminsecs', np.array([100.0872, 258.1604])),
-    'log_keq_minsecs': ('nminsecs', np.array([-8.48, -6.8101])),
-    'alpha_minsecs': ('nminsecs', np.array([9e-10, 6.4e-14])),
+    'cations_valence': ('ncations', np.array([2, 2, 1, 1, 3]))
 })
 
 # Set variable attributes
