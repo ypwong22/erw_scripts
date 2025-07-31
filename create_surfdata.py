@@ -1,3 +1,14 @@
+"""
+Need to first extract the point data from CONUS data. Then modify on it.
+Go to OLMT_ERW (that is: https://github.com/ypwong22/OLMT/tree/yw/elm_erw) to use the makepointdata.py script
+
+#site=UC_Davis
+site=HBR
+#site=UIEF
+inputgen=${E3SM_ROOT}/inputdata
+python makepointdata.py --ccsm_input ${inputgen} --keep_duplicates --site ${site} --sitegroup ERW --mysimyr 1850 --use_erw
+# rename the produced surfdata.pftdyn.nc to surfdata.pftdyn_erw_ctrl.nc because it is created from erw_ensemble_JRA55 ensemble 0 (control run)
+"""
 import os
 import xarray as xr
 from netCDF4 import Dataset
@@ -6,28 +17,18 @@ import pandas as pd
 
 path_root = os.path.join(os.environ['E3SM_ROOT'], 'inputdata', 'lnd', 'clm2', 'PTCLM')
 
-#data_from_gNATSGO = {
-#    'UC_Davis': {'CEC_TOT': 9, 'CEC_EFF': 9, 'CEC_ACID': 1},
-#    'HBR_1': {'CEC_TOT': 7, 'CEC_EFF': 7, 'CEC_ACID': 1}
-#}
 
-"""
 ################################################################################################
-# Interpolated NCSS - extracted from global data and modified
-for site in ['UC_Davis']: 
-    path_surffdata = os.path.join(path_root, site, 'surfdata_erw_from_conus.nc')
-    path_newsurf = os.path.join(path_root, site, 'surfdata_erw.nc')
+# UC Davis: interpolated NCSS - extracted from global data and modified
+path_surffdata = os.path.join(path_root, 'UC_Davis', 'surfdata.nc')
+path_newsurf = os.path.join(path_root, 'UC_Davis', 'surfdata.nc_erw_obs')
 
-    os.system(f'cp {path_surffdata} {path_newsurf}')
-    nc = Dataset(path_newsurf, 'r+')
+os.system(f'cp {path_surffdata} {path_newsurf}')
+nc = Dataset(path_newsurf, 'r+')
+nc.variables['SOIL_PH'][:] = 6.95 * np.ones(10)
+nc.close()
 
-    if site == 'UC_Davis':
-        nc.variables['SOIL_PH'][:] = 6.95 * np.ones(10)
 
-    nc.close()
-"""
-
-"""
 ################################################################################################
 # Hubbard Brook observation
 elm_input = pd.read_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD',
@@ -111,26 +112,26 @@ for a,col in enumerate(['Ca', 'Mg', 'Na', 'K', 'Al']):
     )
 
 
-pct_kaolinite = np.array([0.04420373, 0.04420373, 0.04420373, 0.07958049, 0.07958049,
-                            0.07958049, 0.07958049, 3.9479778 , 3.9479778 , 3.9479778 ])
-pct_calcite = np.array([0.05702039, 0.05702039, 0.05702039, 0.07568372, 0.07568372,
-                        0.07568372, 0.07568372, 1.4137915 , 1.4137915 , 1.4137915 ])
+##pct_kaolinite = np.array([0.04420373, 0.04420373, 0.04420373, 0.07958049, 0.07958049,
+##                           0.07958049, 0.07958049, 3.9479778 , 3.9479778 , 3.9479778 ])
+##pct_calcite = np.array([0.05702039, 0.05702039, 0.05702039, 0.07568372, 0.07568372,
+##                        0.07568372, 0.07568372, 1.4137915 , 1.4137915 , 1.4137915 ])
+##hr['PCT_KAOLINITE'] = xr.DataArray(
+##    pct_kaolinite.reshape(-1, 1, 1), 
+##    dims = dims, 
+##    coords = coords,
+##    attrs = {'long_name': 'percentage naturally occuring kaolinite in soil mineral', 
+##                'units': 'g 100 g-1 soil'}
+##)
 
-hr['PCT_KAOLINITE'] = xr.DataArray(
-    pct_kaolinite.reshape(-1, 1, 1), 
-    dims = dims, 
-    coords = coords,
-    attrs = {'long_name': 'percentage naturally occuring kaolinite in soil mineral', 
-                'units': 'g 100 g-1 soil'}
-)
+##hr['PCT_CALCITE'] = xr.DataArray(
+##    pct_calcite.reshape(-1, 1, 1),
+##    dims = dims, 
+##    coords = coords,
+##    attrs = {'long_name': 'percentage naturally occuring CaCO3 in soil mineral', 
+##                'units': 'g 100 g-1 soil'}
+##)
 
-hr['PCT_CALCITE'] = xr.DataArray(
-    pct_calcite.reshape(-1, 1, 1),
-    dims = dims, 
-    coords = coords,
-    attrs = {'long_name': 'percentage naturally occuring CaCO3 in soil mineral', 
-                'units': 'g 100 g-1 soil'}
-)
 
 # add variable soil thickness
 hr['aveDTB'] = xr.DataArray(
@@ -246,16 +247,15 @@ hr.to_netcdf(path_surffdata.replace('.nc', '_erw_TOP_FMAX_UP.nc'), format='NETCD
 hr.close()
 
 os.system(f'rm {path_surffdata}_temp')
-"""
 
 ################################################################################################
 # UIEF
 # 
 # Table 1 in
 # Namoi, N., Lin, C.-H., Jang, C., Wasonga, D., Zumpf, C., Arshad, M. U., et al. (2025). Field-scale evaluation of ecosystem service benefits of bioenergy switchgrass. Journal of Environmental Quality, 54(3), 576–589. https://doi.org/10.1002/jeq2.70025
-path_surffdata = os.path.join(path_root, 'UIEF', 'surfdata_erw.nc')
-os.system(f'cp {path_surffdata} {path_surffdata}_obs')
-nc = Dataset(f'{path_surffdata}_obs', 'r+')
+path_surffdata = os.path.join(path_root, 'UIEF', 'surfdata.nc')
+os.system(f'cp {path_surffdata} {path_surffdata}_erw_obs')
+nc = Dataset(f'{path_surffdata}_erw_obs', 'r+')
 
 nc['SOIL_PH'][:3,0,0] = 6.11
 nc['SOIL_PH'][3,0,0] = 6.13

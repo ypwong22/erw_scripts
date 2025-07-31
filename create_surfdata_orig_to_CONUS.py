@@ -10,6 +10,10 @@ file_orig = os.path.join(path_root,
                          'landuse.timeseries_0.5x0.5_combined_simyr1850-2100_c240508_newlon.nc')
 file_dest = os.path.join(path_root, 
                          'landuse.conus_erw_off_combined_simyr1850-2100_c240508_newlon.nc')
+#file_orig = os.path.join(path_root, 
+#                         'surfdata_0.5x0.5_simyr1850_c240308_newlon.nc')
+#file_dest = os.path.join(path_root, 
+#                         'surfdata_conus_erw_off_simyr1850_c211019.nc')
 
 
 nc = Dataset(file_orig, 'r')

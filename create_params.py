@@ -126,24 +126,35 @@ ds = xr.Dataset({
 })
 
 # Set variable attributes
+ds['primary_mass'].attrs = {'long_name': 'molar mass of the primary minerals', 'unit': 'g mol-1'}
+ds['log_keq_primary'].attrs = {'long_name': 'log10 of equilibrium constants for primary mineral dissolution', 'unit': ''}
 ds['log_k_primary'].attrs = {'long_name': 'log10 of primary mineral reaction constant at 298.15K', 
                              'unit': 'log mol m-2 s-1'} # (m-2 is the mineral surface area)
 ds['e_primary'].attrs = {'long_name': 'primary mineral reaction activation energy constant at 298.15K', 'unit': 'KJ mol-1'}
 ds['n_primary'].attrs = {'long_name': 'reaction order of H+ and OH- with respect to acid and basic mechanisms', 'unit': ''}
-ds['log_keq_primary'].attrs = {'long_name': 'log10 of equilibrium constants for primary mineral dissolution', 'unit': ''}
 ds['primary_stoi_proton'].attrs = {'long_name': 'reaction stoichiometry coefficient in front of H+', 'unit': ''}
-ds['primary_stoi_h2o'].attrs = {'long_name': 'reaction stoichiometry coefficient in front of H2O (positive=right, negative=left)', 'unit': ''}
 ds['primary_stoi_cations'].attrs = {'long_name': 'reaction stoichiometry coefficient in front of cations', 'unit': ''}
+ds['primary_stoi_h2o'].attrs = {'long_name': 'reaction stoichiometry coefficient in front of H2O (positive=right, negative=left)', 'unit': ''}
 ds['primary_stoi_sio2'].attrs = {'long_name': 'reaction stoichiometry coefficient in front of SiO2', 'unit': ''}
-ds['primary_mass'].attrs = {'long_name': 'molar mass of the primary minerals', 'unit': 'g mol-1'}
+ds['primary_stoi_sio2'].attrs = {'long_name': 'reaction stoichiometry coefficient in front of HCO3-', 'unit': ''}
+
+ds['minsecs_mass'].attrs = {'long_name': 'molar mass of the secondary minerals', 'unit': 'g mol-1'}
+ds['log_keq_minsecs'].attrs = {'long_name': 'log10 of equilibrium constants for secondary mineral dissolution', 'unit': ''}
+ds['ssa_minsecs'].attrs = {'long_name': 'secondary mineral specific surface area', 'unit': 'm2 g-1'}
+ds['k_precip_minsecs'].attrs = {'long_name': 'precipitation rate constants for secondary minerals', 'unit': ''}
+ds['e_precip_minsecs'].attrs = {'long_name': 'secondary mineral precipitation activation energy constant at 298.15K', 'unit': 'KJ mol-1'}
+ds['ph2o_precip_minsecs'].attrs = {'long_name': 'secondary mineral precipitation parameter p on saturation ratio', 'unit': ''}
+ds['qh2o_precip_minsecs'].attrs = {'long_name': 'secondary mineral precipitation parameter q on saturation ratio', 'unit': ''}
+ds['n_precip_minsecs'].attrs = {'long_name': 'reaction order of H+, OH-/HCO3- for secondary mineral precipitation', 'unit': ''}
+ds['k_dissolv_minsecs'].attrs = {'long_name': 'dissolution rate constants for secondary minerals', 'unit': ''}
+ds['e_dissolv_minsecs'].attrs = {'long_name': 'secondary mineral dissolution activation energy constant at 298.15K', 'unit': 'KJ mol-1'}
+ds['n_dissolv_minsecs'].attrs = {'long_name': 'reaction order of H+, OH-/HCO3- for secondary mineral dissolution', 'unit': ''}
+
 ds['cations_mass'].attrs = {'long_name': 'molar mass of the cations', 'unit': 'g mol-1'}
 ds['cations_diffusivity'].attrs = {'long_name': 'diffusion coefficients of the cations in water', 'unit': 'm2 s-1'}
 ds['bicarbonate_diffusivity'].attrs = {'long_name': 'diffusion coefficients of HCO3- in water', 'unit': 'm2 s-1'}
 ds['carbonate_diffusivity'].attrs = {'long_name': 'diffusion coefficients of CO3-- in water', 'unit': 'm2 s-1'}
 ds['cations_valence'].attrs = {'long_name': 'valence of the cations', 'unit': ''}
-ds['minsecs_mass'].attrs = {'long_name': 'molar mass of the secondary minerals', 'unit': 'g mol-1'}
-ds['log_keq_minsecs'].attrs = {'long_name': 'log10 of equilibrium constants for secondary mineral dissolution', 'unit': ''}
-ds['log_keq_minsecs'].attrs = {'long_name': 'precipitation rate parameter of the secondary minerals', 'unit': ''}
 
 # Set global attributes
 ds.attrs['title'] = 'soil/rock powder weathering constants'
@@ -171,7 +182,7 @@ for data_var in ds.data_vars:
 
 # Save the dataset to a NetCDF file
 output_filename = os.path.join(os.environ['E3SM_ROOT'], 'inputdata', 'lnd', 'clm2', 
-                               'paramdata', 'clm_erw_params_c240718.nc')
+                               'paramdata', 'clm_erw_params_c250730.nc')
 ds.to_netcdf(output_filename, encoding = encoding)
 
 print(f'NetCDF file {output_filename} created successfully.')

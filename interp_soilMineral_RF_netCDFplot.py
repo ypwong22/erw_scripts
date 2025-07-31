@@ -11,7 +11,7 @@ from string import ascii_lowercase
 
 
 """Perform the interpolation """
-re_interp = False
+re_interp = True
 if re_interp:
     for varname in ['Calcite','Kaolinit','Feldspar','Gibbsite']:
 
@@ -60,6 +60,9 @@ if re_interp:
             ds[band-1, :, :] = data_reproj
 
         h.close()
+
+        # Limit the values to >= 0
+        
 
         # save to netcdf
         ds = xr.DataArray(ds, coords = {'lat': lats_target, 'lon': lons_target}, 

@@ -27,7 +27,7 @@ minerals_name = ['Wollastonite_CaSiO3', 'Forsterite_Mg2SiO4', 'Albite_NaAlSi3O8'
                  'Anorthite_CaAl2Si2O8', 'Epidote_Ca2FeAl2(SiO4)3(OH)', 'Calcite_CaCO3',
                  'Tremolite_Ca2Mg5Si8O22(OH)2', 'Clinochlore14A_Mg5Al2Si3O10(OH)8',
                  'Kfeldspar_KAlSi3O8', 'Enstatite_MgSiO3']
-minsecs_name = ['Calcite_CaCO3', 'Kaolinite_Al2Si2O5(OH)4']
+minsecs_name = ['Calcite_CaCO3', 'Kaolinite_Al2Si2O5(OH)4', 'Gibbsite_Al(OH)3']
 cations_name = ['Ca2+', 'Mg2+', 'Na+', 'K+', 'Al3+']
 
 # Fill arrays with missing values where data is not provided
@@ -46,8 +46,8 @@ fill = -9999
 # --------------------------------------------------------------------------------------
 ds = xr.Dataset({
     'minerals_name': ('nminerals', np.array(minerals_name, dtype=f'S{string_length}')),
-    'minsecs_name': ('nminsecs', np.array(minsecs_name, dtype=f'S{string_length}')),
-    'cations_name': ('ncations', np.array(cations_name, dtype=f'S{string_length}')),
+    'primary_mass': ('nminerals', np.array([116.159, 140.6931,  262.22, 278.21, 483.22, 
+                                            100.0872, 812.3665, 555.7973, 278.35, 100.4])),
     'log_keq_primary': ('nminerals', np.array([13.7605, 27.8626, 2.7645, 26.578, 32.9296,
                                                1.8487, 61.2367, 67.2391, -0.2753, 11.3269])),
     'log_k_primary': (('nks', 'nminerals'), np.array([
@@ -75,37 +75,71 @@ ds = xr.Dataset({
     'primary_stoi_h2o': ('nminerals', np.array([1, 2, 2, 4, 2, 0, 8, 12, 2, 1])),
     'primary_stoi_sio2': ('nminerals', np.array([1, 1, 3, 2, 3, 0, 8, 3, 3, 1])),
     'primary_stoi_hco3': ('nminerals', np.array([0, 0, 0, 0, 0, 1, 0, 0, 0, 0])),
-    'primary_mass': ('nminerals', np.array([116.159, 140.6931,  262.22, 278.21, 483.22, 
-                                            100.0872, 812.3665, 555.7973, 278.35, 100.4])),
+    'minsecs_name': ('nminsecs', np.array(minsecs_name, dtype=f'S{string_length}')),
+    'minsecs_mass': ('nminsecs', np.array([100.0872, 258.1604, 78.0036])),
+    'log_keq_minsecs': ('nminsecs', np.array([1.8487, 6.8101, 7.7560])),
+    'ssa_minsecs': ('nminsecs', np.array([0.047, 25, 10])), # specific surface area, m2 g-1
+    'k_precip_minsecs': (('nks','nminsecs'), np.array([ # precipitation rate parameter
+        [fill, fill, fill], # acid
+        [1.8e-7, 5.5e-13, fill], # neutral
+        [1.9e-3, fill, 3.1e-6]])), # OH- for gibbsite and HCO3- for calcite
+    'e_precip_minsecs': (('nks', 'nminsecs'), np.array([
+        [fill, fill, fill], # acid
+        [66, 66, fill], # neutral
+        [67, fill, 0]])), # OH- for gibbsite and HCO3- for calcite
+    'ph2o_precip_minsecs': (('nminsecs'), np.array([0.5, 0.06, fill])),
+    'qh2o_precip_minsecs': (('nminsecs'), np.array([2, 1.68, fill])),
+    'n_precip_minsecs': (('nminsecs'), np.array([1.63, fill, 1.])),
+    'k_dissolv_minsecs': (('nks', 'nminsecs'), np.array([ # dissolution rate parameter
+        [10**(-0.3), 10**(-11.31), 10**(-7.65)], # acid
+        [10**(-5.81), 10**(-13.18), 10**(-11.5)], # neutral
+        [10**(-3.48), 10**(-17.05), 10**(-16.65)]])), # OH- for gibbsite and HCO3- for calcite
+    'e_dissolv_minsecs': (('nks', 'nminsecs'), np.array([
+        [14.4, 65.9, 47.5], # acid
+        [23.5, 22.2, 61.2], # neutral
+        [35.4, 17.9, 80.1]])), # OH- for gibbsite and HCO3- for calcite
+    'n_dissolv_minsecs': (('nks', 'nminsecs'), np.array([
+        [1, 0.777, 0.992], # acid
+        [0, 0, 0], # neutral
+        [1, -0.472, -0.784]])), # OH- for gibbsite and HCO3- for calcite
+    'cations_name': ('ncations', np.array(cations_name, dtype=f'S{string_length}')),
     'cations_mass': ('ncations', np.array([40.078, 24.305, 22.99, 39.0983, 26.98])),
     'cations_diffusivity': ('ncations', np.array([0.793e-9, 0.705e-9, 1.33e-9, 1.96e-9, 0.559e-9])),
     'bicarbonate_diffusivity': np.array([1.180e-9]),
     'carbonate_diffusivity': np.array([0.955e-9]),
-    'cations_valence': ('ncations', np.array([2, 2, 1, 1, 3])),
-    'minsecs_mass': ('nminsecs', np.array([100.0872, 258.1604])),
-    'log_keq_minsecs': ('nminsecs', np.array([-8.48, -6.8101])),
-    'alpha_minsecs': ('nminsecs', np.array([9e-10, 6.4e-14])),
+    'cations_valence': ('ncations', np.array([2, 2, 1, 1, 3]))
 })
 
 # Set variable attributes
+ds['primary_mass'].attrs = {'long_name': 'molar mass of the primary minerals', 'unit': 'g mol-1'}
+ds['log_keq_primary'].attrs = {'long_name': 'log10 of equilibrium constants for primary mineral dissolution', 'unit': ''}
 ds['log_k_primary'].attrs = {'long_name': 'log10 of primary mineral reaction constant at 298.15K', 
                              'unit': 'log mol m-2 s-1'} # (m-2 is the mineral surface area)
 ds['e_primary'].attrs = {'long_name': 'primary mineral reaction activation energy constant at 298.15K', 'unit': 'KJ mol-1'}
 ds['n_primary'].attrs = {'long_name': 'reaction order of H+ and OH- with respect to acid and basic mechanisms', 'unit': ''}
-ds['log_keq_primary'].attrs = {'long_name': 'log10 of equilibrium constants for primary mineral dissolution', 'unit': ''}
 ds['primary_stoi_proton'].attrs = {'long_name': 'reaction stoichiometry coefficient in front of H+', 'unit': ''}
-ds['primary_stoi_h2o'].attrs = {'long_name': 'reaction stoichiometry coefficient in front of H2O (positive=right, negative=left)', 'unit': ''}
 ds['primary_stoi_cations'].attrs = {'long_name': 'reaction stoichiometry coefficient in front of cations', 'unit': ''}
+ds['primary_stoi_h2o'].attrs = {'long_name': 'reaction stoichiometry coefficient in front of H2O (positive=right, negative=left)', 'unit': ''}
 ds['primary_stoi_sio2'].attrs = {'long_name': 'reaction stoichiometry coefficient in front of SiO2', 'unit': ''}
-ds['primary_mass'].attrs = {'long_name': 'molar mass of the primary minerals', 'unit': 'g mol-1'}
+ds['primary_stoi_sio2'].attrs = {'long_name': 'reaction stoichiometry coefficient in front of HCO3-', 'unit': ''}
+
+ds['minsecs_mass'].attrs = {'long_name': 'molar mass of the secondary minerals', 'unit': 'g mol-1'}
+ds['log_keq_minsecs'].attrs = {'long_name': 'log10 of equilibrium constants for secondary mineral dissolution', 'unit': ''}
+ds['ssa_minsecs'].attrs = {'long_name': 'secondary mineral specific surface area', 'unit': 'm2 g-1'}
+ds['k_precip_minsecs'].attrs = {'long_name': 'precipitation rate constants for secondary minerals', 'unit': ''}
+ds['e_precip_minsecs'].attrs = {'long_name': 'secondary mineral precipitation activation energy constant at 298.15K', 'unit': 'KJ mol-1'}
+ds['ph2o_precip_minsecs'].attrs = {'long_name': 'secondary mineral precipitation parameter p on saturation ratio', 'unit': ''}
+ds['qh2o_precip_minsecs'].attrs = {'long_name': 'secondary mineral precipitation parameter q on saturation ratio', 'unit': ''}
+ds['n_precip_minsecs'].attrs = {'long_name': 'reaction order of H+, OH-/HCO3- for secondary mineral precipitation', 'unit': ''}
+ds['k_dissolv_minsecs'].attrs = {'long_name': 'dissolution rate constants for secondary minerals', 'unit': ''}
+ds['e_dissolv_minsecs'].attrs = {'long_name': 'secondary mineral dissolution activation energy constant at 298.15K', 'unit': 'KJ mol-1'}
+ds['n_dissolv_minsecs'].attrs = {'long_name': 'reaction order of H+, OH-/HCO3- for secondary mineral dissolution', 'unit': ''}
+
 ds['cations_mass'].attrs = {'long_name': 'molar mass of the cations', 'unit': 'g mol-1'}
 ds['cations_diffusivity'].attrs = {'long_name': 'diffusion coefficients of the cations in water', 'unit': 'm2 s-1'}
 ds['bicarbonate_diffusivity'].attrs = {'long_name': 'diffusion coefficients of HCO3- in water', 'unit': 'm2 s-1'}
 ds['carbonate_diffusivity'].attrs = {'long_name': 'diffusion coefficients of CO3-- in water', 'unit': 'm2 s-1'}
 ds['cations_valence'].attrs = {'long_name': 'valence of the cations', 'unit': ''}
-ds['minsecs_mass'].attrs = {'long_name': 'molar mass of the secondary minerals', 'unit': 'g mol-1'}
-ds['log_keq_minsecs'].attrs = {'long_name': 'log10 of equilibrium constants for secondary mineral dissolution', 'unit': ''}
-ds['log_keq_minsecs'].attrs = {'long_name': 'precipitation rate parameter of the secondary minerals', 'unit': ''}
 
 # Set global attributes
 ds.attrs['title'] = 'soil/rock powder weathering constants'
@@ -133,7 +167,7 @@ for data_var in ds.data_vars:
 
 # Save the dataset to a NetCDF file
 output_filename = os.path.join(os.environ['E3SM_ROOT'], 'inputdata', 'lnd', 'clm2', 
-                               'paramdata', 'clm_erw_UIEF_params_c240718.nc')
+                               'paramdata', 'clm_erw_UIEF_params_c250730.nc')
 ds.to_netcdf(output_filename, encoding = encoding)
 
 print(f'NetCDF file {output_filename} created successfully.')
