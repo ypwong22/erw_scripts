@@ -15,7 +15,7 @@ from tqdm import tqdm
 from sklearn_quantile import RandomForestQuantileRegressor
 
 # Current bad ensemble members - skip these
-skip = np.arange(1637, 2276)
+skip = np.arange(2266, 2276)
 
 
 def collect_predictand():
@@ -24,15 +24,17 @@ def collect_predictand():
     """
     nc = Dataset(os.path.join(os.environ['ZDR'], 'ERW', 'output', 'UQ', 'pft1', 
                               'r_sequestration_diff.nc'))
-    cdr = (nc['r_sequestration_diff'][:, :, :] - nc['n2o_diff'][:, :, :] * 270) / nc['primary_added_diff'][:, :, :]
-    cdr = np.where(cdr.mask, np.nan, cdr.data)
+    cdr = (nc['r_sequestration_diff'][:, :, :] - nc['n2o_diff'][:, :, :] * 270) * 86400 # gC/m2/s
+    cdr = np.where(cdr.mask, np.nan, cdr.data) * 86400 # g/m2/s
+    pmr = nc['primary_added_diff'][:, :, :]
     nc.close()
 
     # delete skipped runs
     if len(skip) > 0:
         cdr = np.delete(cdr, skip-1, axis = 0)
+        pmr = np.delete(pmr, skip-1, axis = 0)
 
-    return cdr
+    return cdr, pmr
 
 
 # add ensemble-specific configurations
@@ -41,14 +43,19 @@ ensemble_setups.index.name = 'ensemble'
 if len(skip) > 0:
     ensemble_setups = ensemble_setups.drop(skip, axis = 0)
 
-cdr = collect_predictand()
+cdr, pmr = collect_predictand()
 cdr = cdr.reshape(cdr.shape[0], -1)
+pmr = pmr.reshape(pmr.shape[0], -1)
 valid_pts = ~np.any(np.isnan(cdr), axis = 0)
 cdr = cdr[:, valid_pts]
+pmr = pmr[:, valid_pts]
 
-cdr = pd.DataFrame(cdr, index = ensemble_setups.index, 
-                   columns = range(cdr.shape[1]))
+cdr = pd.DataFrame(cdr, index = ensemble_setups.index, columns = range(cdr.shape[1]))
+pmr = pd.DataFrame(pmr, index = ensemble_setups.index, columns = range(pmr.shape[1]))
 
+# matrix of CDR 
 combined = pd.concat([ensemble_setups, cdr], axis = 1)
+combined.to_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 'results', 'ensemble', 'pft1', 'combined_cdr.csv'))
 
-combined.to_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 'results', 'ensemble', 'combined.csv'))
+combined = pd.concat([ensemble_setups, pmr], axis = 1)
+combined.to_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 'results', 'ensemble', 'pft1', 'combined_pmr.csv'))

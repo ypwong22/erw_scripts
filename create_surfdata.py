@@ -251,11 +251,17 @@ os.system(f'rm {path_surffdata}_temp')
 ################################################################################################
 # UIEF
 # 
-# Table 1 in
+# Chemistry data from Table 1 in
 # Namoi, N., Lin, C.-H., Jang, C., Wasonga, D., Zumpf, C., Arshad, M. U., et al. (2025). Field-scale evaluation of ecosystem service benefits of bioenergy switchgrass. Journal of Environmental Quality, 54(3), 576–589. https://doi.org/10.1002/jeq2.70025
 path_surffdata = os.path.join(path_root, 'UIEF', 'surfdata.nc')
 os.system(f'cp {path_surffdata} {path_surffdata}_erw_obs')
 nc = Dataset(f'{path_surffdata}_erw_obs', 'r+')
+
+nc['ORGANIC'][:3,0,0] = 3.31 * 1.0 # SOM (%) x BD (g cm-3) converted to kg/m3
+nc['ORGANIC'][3,0,0] = 3.09 * 1.1 # SOM (%) x BD (g cm-3) converted to kg/m3
+nc['ORGANIC'][4,0,0] = 2.89 * 1.1 # SOM (%) x BD (g cm-3) converted to kg/m3
+nc['ORGANIC'][5,0,0] = 2.56 * 1.1 # SOM (%) x BD (g cm-3) converted to kg/m3
+nc['ORGANIC'][6,0,0] = 1.87 * 1.2 # SOM (%) x BD (g cm-3) converted to kg/m3
 
 nc['SOIL_PH'][:3,0,0] = 6.11
 nc['SOIL_PH'][3,0,0] = 6.13
@@ -275,6 +281,11 @@ nc['CEC_ACID'][:3,0,0] = 0.2 * 13.3
 nc['CEC_ACID'][3:5,0,0] = 0.175 * 13.3
 
 # scale down the CEC_EFF proportionally
+# This is not too far away from the Mehlich 3 soil test Ca & Mg & K content
+# reported in the paper - the test extracts exchangeable Ca + some carbonate/surface-bound Ca
+# Ca = 1720 mg kg-1 => 1720 / 40 * 2 / 10 = 8.6 cmolc kg-1
+# Mg = 287 mg kg-1  => 287 / 24 * 2 / 10 = 2.4 cmolc kg-1
+# K = 150 mg kg-1 => 150 / 39 / 10 = 0.38 cmolc kg-1
 factor = np.empty(10)
 factor[:5] = (nc['CEC_TOT'][:5,0,0] - nc['CEC_ACID'][:5,0,0]) / \
              (nc['CEC_EFF_1'][:5,0,0] + nc['CEC_EFF_2'][:5,0,0] + \
@@ -295,6 +306,20 @@ delta = nc['CEC_TOT'][:,0,0] - \
         (nc['CEC_ACID'][:,0,0] + nc['CEC_EFF_1'][:,0,0] + nc['CEC_EFF_2'][:,0,0] + \
           nc['CEC_EFF_3'][:,0,0] + nc['CEC_EFF_4'][:,0,0] + nc['CEC_EFF_5'][:,0,0])
 nc['CEC_ACID'][:,0,0] += delta
+
+
+# soil texture data from Table 1 of
+# Smith, C. M., David, M. B., Mitchell, C. A., Masters, M. D., Anderson-Teixeira, K. J., Bernacchi, C. J., & DeLucia, E. H. (2013). Reduced Nitrogen Losses after Conversion of Row Crop Agriculture to Perennial Biofuel Crops. Journal of Environmental Quality, 42(1), 219–228. https://doi.org/10.2134/jeq2012.0210
+# Because Maize & Soybean in Beerling et al. 2024 ERW study, use Corn data in Table 1
+nc['PCT_SAND'][:3,0,0] = 18
+nc['PCT_SAND'][3:5,0,0] = 16
+nc['PCT_SAND'][5,0,0] = 12
+nc['PCT_SAND'][6:,0,0] = 17
+
+nc['PCT_CLAY'][:3,0,0] = 22
+nc['PCT_CLAY'][3:5,0,0] = 23
+nc['PCT_CLAY'][5,0,0] = 30
+nc['PCT_CLAY'][6:,0,0] = 32
 
 nc.sync()
 
