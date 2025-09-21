@@ -1,0 +1,14 @@
+#!/bin/bash -e
+
+#SBATCH -t 24:00:00
+#SBATCH -J process_ERW_ensemble
+#SBATCH --nodes=1
+#SBATCH -A CLI185
+#SBATCH -p batch_ccsi
+
+# Change to submission directory
+##cd /gpfs/wolf2/cades/cli185/proj-shared/zdr/ERW/output/UQ/pft15
+cd ~/Git/erw_scripts
+
+# Run the script
+~/.conda/envs/olmt/bin/python ensemble_processoutput.py 

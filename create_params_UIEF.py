@@ -10,7 +10,7 @@ import shutil
 #
 # Blue Ridge Basalt, 50 t ha-1 yr-1, 2016-2019 November
 #    2.6% Calcite
-#    11.6% Actinolite (Amphibole): Implement as Tremolite Ca₂Mg₅Si₈O₂₂(OH)₂
+#    11.6% Actinolite (Amphibole): Implement as Ferroactinolite Ca2 Fe(2+)5 Si8 O22 (OH)2
 #    17.8% Piemontite: Implement as Epidote
 #    23.3% Albite
 #    34% Chlorite: Implement as Clinochlore since it is so in USGS database
@@ -24,8 +24,9 @@ string_length = 40
 
 # Define the data
 minerals_name = ['Wollastonite_CaSiO3', 'Forsterite_Mg2SiO4', 'Albite_NaAlSi3O8', 
-                 'Anorthite_CaAl2Si2O8', 'Epidote_Ca2FeAl2(SiO4)3(OH)', 'Calcite_CaCO3',
-                 'Tremolite_Ca2Mg5Si8O22(OH)2', 'Clinochlore14A_Mg5Al2Si3O10(OH)8',
+                 'Anorthite_CaAl2Si2O8', 'Piemontite_(Na2,Ca)2(Fe,Al)3(SiO4)3(OH)', 
+                 'Calcite_CaCO3', 'Ferroactinolite_Ca2(Mg,Fe)5Si8O22(OH)2', 
+                 'Clinochlore_(Mg,Fe2+)5Al(Si3Al)O10(OH)8 ',
                  'Kfeldspar_KAlSi3O8', 'Enstatite_MgSiO3']
 minsecs_name = ['Calcite_CaCO3', 'Kaolinite_Al2Si2O5(OH)4', 'Gibbsite_Al(OH)3']
 cations_name = ['Ca2+', 'Mg2+', 'Na+', 'K+', 'Al3+']
@@ -46,8 +47,8 @@ fill = -9999
 # --------------------------------------------------------------------------------------
 ds = xr.Dataset({
     'minerals_name': ('nminerals', np.array(minerals_name, dtype=f'S{string_length}')),
-    'primary_mass': ('nminerals', np.array([116.159, 140.6931,  262.22, 278.21, 483.22, 
-                                            100.0872, 812.3665, 555.7973, 278.35, 100.4])),
+    'primary_mass': ('nminerals', np.array([116.159, 140.6931,  262.22, 278.21, 457.31, 
+                                            100.0872, 906.44, 586.24, 278.35, 100.4])),
     'log_keq_primary': ('nminerals', np.array([13.7605, 27.8626, 2.7645, 26.578, 32.9296,
                                                1.8487, 61.2367, 67.2391, -0.2753, 11.3269])),
     'log_k_primary': (('nks', 'nminerals'), np.array([
@@ -69,8 +70,8 @@ ds = xr.Dataset({
         2, 4, 4, 8, 4, 1, 14, 16, 4, 2
     ])),
     'primary_stoi_cations': (('ncations', 'nminerals'), np.array([
-        [1,0,0,0,0], [0,2,0,0,0], [0,0,1,0,1], [1,0,0,0,2], [2,0,0,0,0], 
-        [1,0,0,0,0], [2,5,0,0,0], [0,5,0,0,2], [0,0,0,1,1],[0,1,0,0,0]
+        [1,0,0,0,0], [0,2,0,0,0], [0,0,1,0,1], [1,0,0,0,2], [1.5,0,2,0,0], 
+        [1,0,0,0,0], [2,2,0,0,0], [0,4,0,0,2], [0,0,0,1,1],[0,1,0,0,0]
     ]).T), # one can see this from the chemical formula; except epidote
     'primary_stoi_h2o': ('nminerals', np.array([1, 2, 2, 4, 2, 0, 8, 12, 2, 1])),
     'primary_stoi_sio2': ('nminerals', np.array([1, 1, 3, 2, 3, 0, 8, 3, 3, 1])),

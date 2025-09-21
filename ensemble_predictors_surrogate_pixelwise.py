@@ -130,6 +130,9 @@ idx_train = df.index[mask]
 X_train = df.loc[idx_train, :].iloc[:, :4]
 Y_train = df.loc[idx_train, :].iloc[:, 4:]
 
+# Save the training ensemble IDs to CSV
+X_train.to_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 'results', 'ensemble', 'pft1', 'training_samples.csv'))
+
 idx_test = df.index[~mask]
 X_test = df.loc[idx_test, :].iloc[:, :4]
 Y_test = df.loc[idx_test, :].iloc[:, 4:]

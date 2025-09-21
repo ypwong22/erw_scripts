@@ -261,24 +261,25 @@ nc['ORGANIC'][:3,0,0] = 3.31 * 1.0 # SOM (%) x BD (g cm-3) converted to kg/m3
 nc['ORGANIC'][3,0,0] = 3.09 * 1.1 # SOM (%) x BD (g cm-3) converted to kg/m3
 nc['ORGANIC'][4,0,0] = 2.89 * 1.1 # SOM (%) x BD (g cm-3) converted to kg/m3
 nc['ORGANIC'][5,0,0] = 2.56 * 1.1 # SOM (%) x BD (g cm-3) converted to kg/m3
-nc['ORGANIC'][6,0,0] = 1.87 * 1.2 # SOM (%) x BD (g cm-3) converted to kg/m3
+nc['ORGANIC'][6:,0,0] = 1.87 * 1.2 # SOM (%) x BD (g cm-3) converted to kg/m3
 
 nc['SOIL_PH'][:3,0,0] = 6.11
 nc['SOIL_PH'][3,0,0] = 6.13
 nc['SOIL_PH'][4,0,0] = 6.34
 nc['SOIL_PH'][5,0,0] = 6.63
-nc['SOIL_PH'][6,0,0] = 6.86
+nc['SOIL_PH'][6:,0,0] = 6.86 # use layer 6 data for all layers below
 
 nc['CEC_TOT'][:3,0,0] = 13.3
 nc['CEC_TOT'][3,0,0] = 14.1
 nc['CEC_TOT'][4,0,0] = 14.7
 nc['CEC_TOT'][5,0,0] = 15.6
-nc['CEC_TOT'][6,0,0] = 14.5
+nc['CEC_TOT'][6:,0,0] = 14.5 # use layer 6 data for all layers below
 
 # organic matter content is okay compared to observed
 
 nc['CEC_ACID'][:3,0,0] = 0.2 * 13.3
 nc['CEC_ACID'][3:5,0,0] = 0.175 * 13.3
+nc['CEC_ACID'][5:,0,0] = 0.175 * 13.3 # use deepest data for all the layeres below?
 
 # scale down the CEC_EFF proportionally
 # This is not too far away from the Mehlich 3 soil test Ca & Mg & K content
@@ -286,27 +287,32 @@ nc['CEC_ACID'][3:5,0,0] = 0.175 * 13.3
 # Ca = 1720 mg kg-1 => 1720 / 40 * 2 / 10 = 8.6 cmolc kg-1
 # Mg = 287 mg kg-1  => 287 / 24 * 2 / 10 = 2.4 cmolc kg-1
 # K = 150 mg kg-1 => 150 / 39 / 10 = 0.38 cmolc kg-1
-factor = np.empty(10)
-factor[:5] = (nc['CEC_TOT'][:5,0,0] - nc['CEC_ACID'][:5,0,0]) / \
-             (nc['CEC_EFF_1'][:5,0,0] + nc['CEC_EFF_2'][:5,0,0] + \
-              nc['CEC_EFF_3'][:5,0,0] + nc['CEC_EFF_4'][:5,0,0] + \
-              nc['CEC_EFF_5'][:5,0,0])
-factor[5:7] = nc['CEC_TOT'][5:7,0,0] / \
-    (nc['CEC_ACID'][5:7,0,0] + nc['CEC_EFF_1'][5:7,0,0] + \
-     nc['CEC_EFF_2'][5:7,0,0] + nc['CEC_EFF_3'][5:7,0,0] + \
-     nc['CEC_EFF_4'][5:7,0,0] + nc['CEC_EFF_5'][5:7,0,0])
+##factor = np.empty(10)
+##factor[:5] = (nc['CEC_TOT'][:5,0,0] - nc['CEC_ACID'][:5,0,0]) / \
+##             (nc['CEC_EFF_1'][:5,0,0] + nc['CEC_EFF_2'][:5,0,0] + \
+##              nc['CEC_EFF_3'][:5,0,0] + nc['CEC_EFF_4'][:5,0,0] + \
+##              nc['CEC_EFF_5'][:5,0,0])
+##factor[5:7] = nc['CEC_TOT'][5:7,0,0] / \
+##    (nc['CEC_ACID'][5:7,0,0] + nc['CEC_EFF_1'][5:7,0,0] + \
+##     nc['CEC_EFF_2'][5:7,0,0] + nc['CEC_EFF_3'][5:7,0,0] + \
+##     nc['CEC_EFF_4'][5:7,0,0] + nc['CEC_EFF_5'][5:7,0,0])
+##for i in range(1,6):
+##    for j in range(7):
+##        z
+##for j in range(5,7):
+##    nc['CEC_ACID'][j,0,0] *= factor[j]
+factor = (nc['CEC_TOT'][:10,0,0] - nc['CEC_ACID'][:10,0,0]) / \
+             (nc['CEC_EFF_1'][:10,0,0] + nc['CEC_EFF_2'][:10,0,0] + \
+              nc['CEC_EFF_3'][:10,0,0] + nc['CEC_EFF_4'][:10,0,0] + \
+              nc['CEC_EFF_5'][:10,0,0])
 for i in range(1,6):
-    for j in range(7):
+    for j in range(10):
         nc[f'CEC_EFF_{i}'][j,0,0] *= factor[j]
-for j in range(5,7):
-    nc['CEC_ACID'][j,0,0] *= factor[j]
 
-# rescale for all the layers to account for small differences
-delta = nc['CEC_TOT'][:,0,0] - \
-        (nc['CEC_ACID'][:,0,0] + nc['CEC_EFF_1'][:,0,0] + nc['CEC_EFF_2'][:,0,0] + \
-          nc['CEC_EFF_3'][:,0,0] + nc['CEC_EFF_4'][:,0,0] + nc['CEC_EFF_5'][:,0,0])
-nc['CEC_ACID'][:,0,0] += delta
-
+# re-clip CEC_ACID to prevent small numerical errors 
+nc['CEC_ACID'][:,0,0] = nc['CEC_TOT'][:,0,0] - \
+        ( nc['CEC_EFF_1'][:,0,0] + nc['CEC_EFF_2'][:,0,0] + \
+          nc['CEC_EFF_3'][:,0,0] + nc['CEC_EFF_4'][:,0,0] + nc['CEC_EFF_5'][:,0,0] )
 
 # soil texture data from Table 1 of
 # Smith, C. M., David, M. B., Mitchell, C. A., Masters, M. D., Anderson-Teixeira, K. J., Bernacchi, C. J., & DeLucia, E. H. (2013). Reduced Nitrogen Losses after Conversion of Row Crop Agriculture to Perennial Biofuel Crops. Journal of Environmental Quality, 42(1), 219–228. https://doi.org/10.2134/jeq2012.0210
@@ -314,12 +320,26 @@ nc['CEC_ACID'][:,0,0] += delta
 nc['PCT_SAND'][:3,0,0] = 18
 nc['PCT_SAND'][3:5,0,0] = 16
 nc['PCT_SAND'][5,0,0] = 12
-nc['PCT_SAND'][6:,0,0] = 17
+nc['PCT_SAND'][6:,0,0] = 17 # use deepest data for all the layeres below?
 
 nc['PCT_CLAY'][:3,0,0] = 22
 nc['PCT_CLAY'][3:5,0,0] = 23
 nc['PCT_CLAY'][5,0,0] = 30
-nc['PCT_CLAY'][6:,0,0] = 32
+nc['PCT_CLAY'][6:,0,0] = 32 # use deepest data for all the layeres below?
+
+# default LOG_KM values @20250916
+# test @ 20250917
+#     logkm_assumed = np.array([-4.7, -4.7, -2.825, -2.238, -5])
+# test @ 20250918
+logkm_assumed = np.array([-4, -4, -2.825, -1.78, -4])
+cols = ['Ca', 'Mg', 'Na', 'K', 'Al']
+
+for a, col in enumerate(cols):
+    varname = f"LOG_KM_{a+1}"
+    var = nc.createVariable(varname, "f4", ("nlevsoi", "lsmlat", "lsmlon"))
+    var[:, :, :] = logkm_assumed[a] * np.ones((10, 1, 1))
+    var.long_name = "individual Gaines-Thomas cation exchange coefficients"
+    var.units = ""
 
 nc.sync()
 
