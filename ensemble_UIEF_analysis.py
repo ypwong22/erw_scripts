@@ -14,7 +14,7 @@ def read_obs_UIEF():
                                         header = 2, usecols = [0,49,50,52,53],
                                         index_col = 0, 
                                         skiprows = list(range(2)) + list(range(4,34)) + \
-                                            list(range(39,80)))
+                                                   list(range(39,80)))
     weathering_difference.columns = ['Ca weathered', 'stdev.1', 'Mg weathered', 'stdev.2']
 
     # (5) CEC %, extracted from the plot
@@ -76,6 +76,11 @@ def read_sim_UIEF(ensemble_id):
     depth_names = ['0-10cm', '10-30cm']
     tvec = np.arange(2015, 2022)
 
+    # Soil bulk density at the site, obtained from other runs
+    bd_col = np.array([1440.936, 1440.936, 1440.936, 1434.132, 1434.132, 1420.524,
+                       1437.534, 1437.534, 1437.534, 1437.534, 1437.534, 1437.534,
+                       1437.534, 1437.534, 1437.534])
+
     case_name = '20250921_UIEF_ICB20TRCNPRDCTCBC_erw'
     flist = [os.path.join(os.environ['E3SM_ROOT'], 'output', 'UQ', case_name, f'g{ensemble_id:05d}', 
                           f'{case_name}.elm.h1.{yy}-01-01-00000.nc') \
@@ -96,7 +101,7 @@ def read_sim_UIEF(ensemble_id):
         weight = np.where((zsoi[:-1] < max_depth) & (zsoi[1:] > min_depth),
                           np.minimum(thickness, max_depth - zsoi[:-1], zsoi[1:] - min_depth),
                           0)
-        soil_pH[dname] = np.nansum(hr['soil_pH'].resample(time = '1YE').mean().values[:,:nlevsoi,0] * \
+        soil_pH[dname] = np.nansum(hr['soil_pH'].resample(time = '1Y').mean().values[:,:nlevsoi,0] * \
                                    weight.reshape(1, -1), axis = 1) / np.sum(weight)
 
     # CEC: convert from g m-3 soil to meq 100g-1 dry soil
@@ -113,32 +118,30 @@ def read_sim_UIEF(ensemble_id):
             enumerate(zip(['Ca2+','Mg2+','Na+','K+','Al3+'],
                           [2, 2, 1, 1, 3], [40, 24, 23, 29, 27])):
             soil_cec_sim[cation] = \
-                ((hr[f'cec_cation_vr_{1+i}'][:,:nlevsoi,0].resample(time='1YE').mean() * \
+                ((hr[f'cec_cation_vr_{1+i}'][:,:nlevsoi,0].resample(time='1Y').mean() * \
                   weight.reshape(1, -1)).sum(axis = 1) * 1000 / 10 * val_icat / mass_icat / \
-                 (hr['bd_col'][:,:nlevsoi,0].resample(time='1YE').mean() * \
-                  weight.reshape(1,-1)).sum(axis = 1)).values
+                 (bd_col[:nlevsoi] * weight).sum()).values
 
         soil_cec_sim['H+'] = \
-            ((hr[f'cec_proton_vr'][:,:nlevsoi,0].resample(time='1YE').mean() * \
+            ((hr[f'cec_proton_vr'][:,:nlevsoi,0].resample(time='1Y').mean() * \
               weight.reshape(1, -1)).sum(axis = 1) * 1000 / 10 / \
-             (hr['bd_col'][:,:nlevsoi,0].resample(time='1YE').mean() * weight.reshape(1, -1)
-             ).sum(axis = 1)).values
+             (bd_col[:nlevsoi] * weight).sum()).values
 
         soil_cec_sim = pd.DataFrame(soil_cec_sim, index = tvec)
 
-        pct_acid[dname] = (soil_cec_sim[['H+','Al3+']].sum(axis = 1) / soil_cec_sim.sum(axis = 1))
-        base_saturation[dname] = (soil_cec_sim.drop(['H+','Al3+'], axis = 1).sum(axis = 1) / soil_cec_sim.sum(axis = 1))
+        pct_acid[dname] = 100 * (soil_cec_sim[['H+','Al3+']].sum(axis = 1) / soil_cec_sim.sum(axis = 1))
+        base_saturation[dname] = 100 * (soil_cec_sim.drop(['H+','Al3+'], axis = 1).sum(axis = 1) / soil_cec_sim.sum(axis = 1))
 
     # Dissolved amount of basalt, converted to amount of lost Ca and Mg
     # g m-2
     # note: need to divide by 89% to get total basalt amount
     total_residing = hr['primary_mineral'][:, :, 0].sum(axis = 1)
-    total_residing = total_residing.resample(time = '1YE').last()
+    total_residing = total_residing.resample(time = '1Y').last()
 
     # g m-2 s-1 => cumulative g m-2
     # note: need to divide by 89% to get total basalt amount
     cum_applied = (hr['primary_added'][:, :, 0].sum(axis = 1) * 3600 * 24).cumsum()
-    cum_applied = cum_applied.resample(time = '1YE').last()
+    cum_applied = cum_applied.resample(time = '1Y').last()
 
     # dissolved basalt, assume 58% in the 0-10cm like in the paper
     total_dissolved = (cum_applied - total_residing) * 0.58
@@ -158,6 +161,20 @@ def read_sim_UIEF(ensemble_id):
     return soil_pH, pct_acid, base_saturation, total_dissolved_ca, total_dissolved_mg
 
 
+def read_param_UIEF(ensemble_id):
+    """ Function to get the """
+    case_name = '20250921_UIEF_ICB20TRCNPRDCTCBC_erw'
+    hr = xr.open_dataset(os.path.join(os.environ['E3SM_ROOT'], 'output', 'UQ', case_name,
+                                      f'g{ensemble_id:05d}', f'surfdata_{ensemble_id:05d}.nc'))
+    params = {}
+    for i in range(1,6):
+        var = f'LOG_KM_{i}'
+        params[('param',var)] = float(hr[var][0,0,0])
+    hr.close()
+
+    return pd.Series(params)
+
+
 def calc_rmse(ensemble_id):
     obs_soil_pH, cec_pct, weathering_difference = read_obs_UIEF()
     soil_pH, pct_acid, base_saturation, total_dissolved_ca, total_dissolved_mg = read_sim_UIEF(ensemble_id)
@@ -171,8 +188,11 @@ def calc_rmse(ensemble_id):
                                                 total_dissolved_ca.loc[weathering_difference.index]) ** 2).mean())
     rmse.loc['total_dissolved_mg', :] = np.sqrt(((weathering_difference['Mg weathered'] - \
                                                 total_dissolved_mg.loc[weathering_difference.index]) ** 2).mean())
+    rmse = rmse.unstack()
 
-    return rmse.unstack()
+    params = read_param_UIEF(ensemble_id)
+
+    return pd.concat([params, rmse])
 
 
 def parallel_process(ens_list, max_workers=8):
@@ -194,7 +214,5 @@ def parallel_process(ens_list, max_workers=8):
     df = pd.DataFrame.from_dict(results, orient="index")
     return df
 
-
-df = parallel_process(range(1,1001), max_workers=16)
-
-df.to_csv(os.path.join(os.environ['PORJIDR'], 'ERW_LDRD', 'results', 'ensemble_UIEF_rmse.csv'))
+df = parallel_process(range(1,1001), max_workers=25)
+df.to_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 'results', 'ensemble_UIEF_rmse.csv'))
