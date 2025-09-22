@@ -76,15 +76,16 @@ def read_sim_UIEF(ensemble_id):
     depth_names = ['0-10cm', '10-30cm']
     tvec = np.arange(2015, 2022)
 
-    ##case_name = '20250921_UIEF_ICB20TRCNPRDCTCBC_erw'
-    ##flist = [os.path.join(os.environ['E3SM_ROOT'], 'output', 'UQ', case_name, f'g{ensemble_id:05d}', 
-    ##                      f'{case_name}.elm.h1.{yy}-01-01-00000.nc') \
-    ##         for yy in range(2015, 2022)]
-
-    case_name = '20250920_UIEF_ICB20TRCNPRDCTCBC_obsForc'
-    flist = [os.path.join(os.environ['E3SM_ROOT'], 'output', f'{case_name}erw', 'run', 
-                            f'{case_name}erw.elm.h1.{yy}-01-01-00000.nc') \
+    case_name = '20250921_UIEF_ICB20TRCNPRDCTCBC_erw'
+    flist = [os.path.join(os.environ['E3SM_ROOT'], 'output', 'UQ', case_name, f'g{ensemble_id:05d}', 
+                          f'{case_name}.elm.h1.{yy}-01-01-00000.nc') \
              for yy in range(2015, 2022)]
+
+    ## debug test
+    ##case_name = '20250920_UIEF_ICB20TRCNPRDCTCBC_obsForc'
+    ##flist = [os.path.join(os.environ['E3SM_ROOT'], 'output', f'{case_name}erw', 'run', 
+    ##                        f'{case_name}erw.elm.h1.{yy}-01-01-00000.nc') \
+    ##         for yy in range(2015, 2022)]
 
     hr = xr.open_mfdataset(flist)
 
