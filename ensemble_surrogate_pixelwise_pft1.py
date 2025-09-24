@@ -28,6 +28,7 @@ def load_and_prepare_data(path_root: str) -> tuple[pd.DataFrame, np.ndarray, np.
         axis=1
     ) # Convert the frequency to the number of times applied
     df = df.rename(columns={"Grain size (um)": "SSA (m2 g-1)", 'Frequency': 'Ntimes'})
+
     # Columns 0-3: input variables
     # Columns 4-end: output variables
     return df
@@ -118,6 +119,9 @@ def lhs_train_test_split(df: pd.DataFrame, path_root: str, train_frac: float = 0
     treatments = {key: df[key].drop_duplicates().values for key in df.columns[:4]}
     n_allcomb = 16900
 
+    df_na = df.loc[df[df.columns[4:]].isna().all(axis=1), :]
+    df_valid = df.dropna(axis = 0, how = 'all', subset = df.columns[4:]) # drop unused rows
+
     # Because the search space is not the full space, use LHS to sample
     # the full space and remove those that are not in the search space. 
     # Iteratively find the sample fraction needed for the full space.
@@ -127,18 +131,18 @@ def lhs_train_test_split(df: pd.DataFrame, path_root: str, train_frac: float = 0
         lhs_n = int(np.ceil(n_allcomb * lhs_frac))
         df_lhs = lhs_from_levels(treatments, n=lhs_n, random_state=42, enforce_unique=True)
         # Boolean mask for whether the ensemble IDs are in the sampled space
-        mask = df.iloc[:, :4].apply(tuple, axis=1).isin(df_lhs.apply(tuple, axis=1))
-        real_frac = np.sum(mask) / df.shape[0]
+        mask = df_valid.iloc[:, :4].apply(tuple, axis=1).isin(df_lhs.apply(tuple, axis=1))
+        real_frac = np.sum(mask) / df_valid.shape[0]
         lhs_frac *= 0.9
         print(f'Latin hypercube sampled fraction = {real_frac:.4f}')
 
-    idx_train = df.index[mask]
+    idx_train = df_valid.index[mask]
     X_train_df = df.loc[idx_train, :].iloc[:, :4]
     Y_train_df = df.loc[idx_train, :].iloc[:, 4:]
     # Save the training ensemble IDs to CSV
     X_train_df.to_csv(os.path.join(path_root, 'training_samples.csv'))
 
-    idx_test = df.index[~mask]
+    idx_test = df_valid.index[~mask].append(df_na.index)
     X_test_df = df.loc[idx_test, :].iloc[:, :4]
     Y_test_df = df.loc[idx_test, :].iloc[:, 4:]
 
@@ -170,8 +174,9 @@ def evaluate_single(icol, model_cls, params, name, X_train, Y_train, X_test, Y_t
     ##y_true_uns = np.expm1(Y_test[:,icol]).clip(min = 0.)
 
     # metrics
-    mse = mean_squared_error(y_true_uns, y_pred_uns)
-    r2  = r2_score(y_true_uns, y_pred_uns)
+    filt = ~np.isnan(y_true_uns)
+    mse = mean_squared_error(y_true_uns[filt], y_pred_uns[filt])
+    r2  = r2_score(y_true_uns[filt], y_pred_uns[filt])
 
     if hasattr(model, "feature_importances_"):
         return {"Model": name, "Column": icol, "MSE": mse, "R2": r2, "YPred": y_pred_uns, "Importance": model.feature_importances_}
