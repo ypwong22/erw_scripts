@@ -81,7 +81,7 @@ def read_sim_UIEF(ensemble_id):
                        1437.534, 1437.534, 1437.534, 1437.534, 1437.534, 1437.534,
                        1437.534, 1437.534, 1437.534])
 
-    case_name = '20250921_UIEF_ICB20TRCNPRDCTCBC_erw'
+    case_name = '20251001_UIEF_ICB20TRCNPRDCTCBC_erw'
     flist = [os.path.join(os.environ['E3SM_ROOT'], 'output', 'UQ', case_name, f'g{ensemble_id:05d}', 
                           f'{case_name}.elm.h1.{yy}-01-01-00000.nc') \
              for yy in range(2015, 2022)]
@@ -163,7 +163,7 @@ def read_sim_UIEF(ensemble_id):
 
 def read_param_UIEF(ensemble_id):
     """ Function to get the """
-    case_name = '20250921_UIEF_ICB20TRCNPRDCTCBC_erw'
+    case_name = '20250924_UIEF_ICB20TRCNPRDCTCBC_erw'
     hr = xr.open_dataset(os.path.join(os.environ['E3SM_ROOT'], 'output', 'UQ', case_name,
                                       f'g{ensemble_id:05d}', f'surfdata_{ensemble_id:05d}.nc'))
     params = {}
@@ -175,19 +175,35 @@ def read_param_UIEF(ensemble_id):
     return pd.Series(params)
 
 
-def calc_rmse(ensemble_id):
+def calc_kge(ensemble_id):
+    """ Use Kling-Gupta Efficiency to simultaneously obtain correlation, mean bias, and variability """
+
+    def _kge(obs, sim):
+        obs, sim = np.array(obs), np.array(sim)
+
+        # correlation
+        r = np.corrcoef(obs, sim)[0, 1]
+
+        # mean bias ratio
+        beta = np.mean(sim) / np.mean(obs)
+
+        # variability ratio (coefficient of variation)
+        gamma = (np.std(sim) / np.mean(sim)) / (np.std(obs) / np.mean(obs))
+
+        # Kling-Gupta Efficiency
+        return 1 - np.sqrt((r - 1)**2 + (beta - 1)**2 + (gamma - 1)**2)
+
     obs_soil_pH, cec_pct, weathering_difference = read_obs_UIEF()
     soil_pH, pct_acid, base_saturation, total_dissolved_ca, total_dissolved_mg = read_sim_UIEF(ensemble_id)
 
     rmse = pd.DataFrame(np.nan, index = ['soil_pH', 'pct_acid', 'base_saturation', 'total_dissolved_ca', 'total_dissolved_mg'], 
                         columns = ['0-10cm', '10-30cm'])
-    rmse.loc['soil_pH', :] = np.sqrt(((obs_soil_pH - soil_pH.loc[obs_soil_pH.index,:]) ** 2).mean())
-    rmse.loc['pct_acid', :] = np.sqrt(((cec_pct['acid'] - pct_acid.loc[cec_pct.index,:]) ** 2).mean())
-    rmse.loc['base_saturation', :] = np.sqrt(((cec_pct['base sat'] - base_saturation.loc[cec_pct.index,:]) ** 2).mean())
-    rmse.loc['total_dissolved_ca', :] = np.sqrt(((weathering_difference['Ca weathered'] - \
-                                                total_dissolved_ca.loc[weathering_difference.index]) ** 2).mean())
-    rmse.loc['total_dissolved_mg', :] = np.sqrt(((weathering_difference['Mg weathered'] - \
-                                                total_dissolved_mg.loc[weathering_difference.index]) ** 2).mean())
+    for depth in rmse.columns:
+        rmse.loc['soil_pH', depth] = _kge(obs_soil_pH[depth], soil_pH.loc[obs_soil_pH.index,depth])
+        rmse.loc['pct_acid', depth] = _kge(cec_pct[('acid',depth)], pct_acid.loc[cec_pct.index,depth])
+        rmse.loc['base_saturation', depth] = _kge(cec_pct[('base sat',depth)], base_saturation.loc[cec_pct.index,depth])
+        rmse.loc['total_dissolved_ca', depth] = _kge(weathering_difference['Ca weathered'], total_dissolved_ca.loc[weathering_difference.index]) # No depth in this one
+        rmse.loc['total_dissolved_mg', depth] = _kge(weathering_difference['Mg weathered'], total_dissolved_mg.loc[weathering_difference.index])
     rmse = rmse.unstack()
 
     params = read_param_UIEF(ensemble_id)
@@ -200,8 +216,8 @@ def parallel_process(ens_list, max_workers=8):
 
     # Run in parallel
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
-        future_to_folder = {executor.submit(calc_rmse, f): f for f in ens_list}
-        
+        future_to_folder = {executor.submit(calc_kge, f): f for f in ens_list}
+
         for future in as_completed(future_to_folder):
             folder_id = future_to_folder[future]
             try:
@@ -214,5 +230,6 @@ def parallel_process(ens_list, max_workers=8):
     df = pd.DataFrame.from_dict(results, orient="index")
     return df
 
+
 df = parallel_process(range(1,1001), max_workers=25)
-df.to_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 'results', 'ensemble_UIEF_rmse.csv'))
+df.to_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 'results', 'ensemble_UIEF_kge.csv'))

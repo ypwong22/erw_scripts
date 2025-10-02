@@ -277,9 +277,9 @@ nc['CEC_TOT'][6:,0,0] = 14.5 # use layer 6 data for all layers below
 
 # organic matter content is okay compared to observed
 
-nc['CEC_ACID'][:3,0,0] = 0.2 * 13.3
-nc['CEC_ACID'][3:5,0,0] = 0.175 * 13.3
-nc['CEC_ACID'][5:,0,0] = 0.175 * 13.3 # use deepest data for all the layeres below?
+nc['CEC_ACID'][:3,0,0] = 0.2 * nc['CEC_TOT'][:3,0,0]
+nc['CEC_ACID'][3:5,0,0] = 0.175 * nc['CEC_TOT'][3:5,0,0]
+nc['CEC_ACID'][5:,0,0] = 0.175 * nc['CEC_TOT'][5:,0,0] # use deepest data for all the layeres below?
 
 # scale down the CEC_EFF proportionally
 # This is not too far away from the Mehlich 3 soil test Ca & Mg & K content
