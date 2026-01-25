@@ -37,6 +37,16 @@ def read_pheno():
     return (res_sp.slope, res_sp.intercept, res_sp.stderr), (res_fa.slope, res_fa.intercept, res_fa.stderr)
 
 
+def read_pheno_raw():
+    """ Phenology is measured from 0-4 as no leaf-out to summer leaf condition"""
+    data = pd.read_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 'data', 
+                                    'Hubbard_Brook', 'knb-lter-hbr.51.14',
+                                    'HBEF_Phenology_longform.csv'),
+                       index_col = 1, parse_dates=True)
+    data = data.loc[data.index.year >= 2012, :]
+    return data
+
+
 def read_snowcourse():
     """ Snowcourse 2 is in Watershed 1 and has continued measurements till present """
     data = pd.read_csv(os.path.join(os.environ['PROJDIR'], 'ERW_LDRD', 'data', 
@@ -49,8 +59,6 @@ def read_snowcourse():
     data = data.unstack().T['STA2'].sort_index()
     data = data.loc[data.index.year >= 2012]
     data = data.reindex(pd.date_range('2012-01-01','2024-04-10'))
-    # linearly interpolate missing values
-    data = data.interpolate(method = 'linear', limit = 14)
     return data
 
 
@@ -60,7 +68,7 @@ def read_lysimeter():
                                     'W1Lysim_HB1996-2020.csv'),
                     index_col = [3, 2, 0], parse_dates=True)
     data = data[['pH','Ca2+', 'Mg2+', 'Na+', 'K+', 'Alt']].sort_index() # 'Elevation',
-    data[data < 0] = np.nan
+    data[data <= 0.1] = np.nan # catch the 1e-7 outlier in Al3+ Oe layer
 
     # umol/L => mol/L
     data.iloc[:, 1:] = data.iloc[:, 1:] * 1e-6
@@ -91,7 +99,9 @@ def read_lysimeter():
     data = data.set_index(['Horizon', 'Site', 'Date'])
 
     data_mean = data.groupby(['Horizon', 'Date']).mean()
-    data_std = data.groupby(['Horizon', 'Date']).std()
+    #data_std = data.groupby(['Horizon', 'Date']).std()
+    data_25 = data.groupby(['Horizon', 'Date']).quantile(0.25)
+    data_75 = data.groupby(['Horizon', 'Date']).quantile(0.75)
 
     # limit to pre-application
     # data = data.loc[data.index.get_level_values(0) < pd.Timestamp('2001-01-30'), :]
@@ -99,7 +109,7 @@ def read_lysimeter():
     #cation_mass = {'Ca2+': 40.078, 'Mg2+': 24.305, 'Na+': 22.99, 'K+': 39.0983, 'Alt': 26.98}
     #for col in cation_mass.keys():
     #    data[col] = data[col] # * cation_mass[col] / 1e3 # 1e-6 mol/L => g/m^3
-    return data_mean, data_std
+    return data_mean, data_25, data_75
 
 
 def read_streamChem():

@@ -81,7 +81,7 @@ def read_sim_UIEF(ensemble_id):
                        1437.534, 1437.534, 1437.534, 1437.534, 1437.534, 1437.534,
                        1437.534, 1437.534, 1437.534])
 
-    case_name = '20251001_UIEF_ICB20TRCNPRDCTCBC_erw'
+    case_name = '20251002_UIEF_ICB20TRCNPRDCTCBC_erw'
     flist = [os.path.join(os.environ['E3SM_ROOT'], 'output', 'UQ', case_name, f'g{ensemble_id:05d}', 
                           f'{case_name}.elm.h1.{yy}-01-01-00000.nc') \
              for yy in range(2015, 2022)]
@@ -163,7 +163,7 @@ def read_sim_UIEF(ensemble_id):
 
 def read_param_UIEF(ensemble_id):
     """ Function to get the """
-    case_name = '20250924_UIEF_ICB20TRCNPRDCTCBC_erw'
+    case_name = '20251002_UIEF_ICB20TRCNPRDCTCBC_erw'
     hr = xr.open_dataset(os.path.join(os.environ['E3SM_ROOT'], 'output', 'UQ', case_name,
                                       f'g{ensemble_id:05d}', f'surfdata_{ensemble_id:05d}.nc'))
     params = {}
