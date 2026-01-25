@@ -168,8 +168,9 @@ def read_cec():
     # subtract the Al3+ from Acid exchange to get the H+
     data['ExAcidcmolc_kg'] = data['ExAcidcmolc_kg'] - data['ExAlcmolc_kg'].values
     data_mean = data.groupby(['Horizon', 'Year']).mean()
-    data_std = data.groupby(['Horizon', 'Year']).std()
-    return data_mean, data_std
+    ##data_std = data.groupby(['Horizon', 'Year']).std()
+    data_tot_std = data.sum(axis = 1, skipna=False).groupby(['Horizon','Year']).std()
+    return data_mean, data_tot_std
 
 
 def read_tsoi():
